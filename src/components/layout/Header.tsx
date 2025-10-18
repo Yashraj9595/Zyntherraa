@@ -8,46 +8,65 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 sticky top-0 z-50">
       {/* Top bar */}
-      <div className="bg-black text-white text-sm py-3">
-        <div className="container mx-auto px-4 text-center">
-          <span className="inline-flex items-center space-x-2">
-            <span>✨ Free shipping on orders over $100</span>
-            <span className="text-gray-300">|</span>
-            <span>🔄 30-day returns</span>
-            <span className="text-gray-300">|</span>
-            <span>🎉 New arrivals daily</span>
-          </span>
+         <div className="bg-black text-white text-sm py-3 overflow-hidden">
+      <div className="container mx-auto px-4 whitespace-nowrap">
+        <div className="inline-block animate-marquee">
+          {/* Duplicate content for smooth infinite scrolling */}
+          ✨ Free shipping on orders over $100
+          <span className="text-gray-300 mx-2">|</span>
+          🔄 30-day returns
+          <span className="text-gray-300 mx-2">|</span>
+          🎉 New arrivals daily
+          <span className="text-gray-300 mx-2">|</span>
+          ✨ Free shipping on orders over $100
+          <span className="text-gray-300 mx-2">|</span>
+          🔄 30-day returns
+          <span className="text-gray-300 mx-2">|</span>
+          🎉 New arrivals daily
         </div>
       </div>
+    </div>
 
       {/* Main header */}
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-3xl font-black text-black hover:scale-105 transition-transform duration-300">
-            <span className="gradient-text">ZYNTHERRAA</span>
+          <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300">
+            <img
+        src="images/logo.jpeg"
+        alt="Logo"
+        className="w-32 h-auto" // adjust width as needed
+      />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-10">
-            <Link to="/shop" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
-              Shop
+            <Link to="/" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+               Home
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/men" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+            {/* <Link to="/men" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
               Men
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-            <Link to="/women" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
-              Women
+            </Link> */}
+            <Link to="/category" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+              Shop by category
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-pink-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            <Link to="/kids" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+            {/* <Link to="/kids" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
               Kids
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-500 transition-all duration-300 group-hover:w-full"></span>
+            </Link> */}
+            <Link to="/shop" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+              shop All
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link to="/sale" className="bg-red-600 text-white px-4 py-2 rounded-full font-bold hover:scale-105 transition-all duration-300">
               🔥 Sale
+            </Link>
+            <Link to="/blog" className="text-gray-700 hover:text-black transition-all duration-300 font-medium relative group">
+              Blogs
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
           </nav>
 

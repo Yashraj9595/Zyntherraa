@@ -71,6 +71,13 @@ module.exports = {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+         marquee: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
+      },
+       animation: {
+        marquee: 'marquee 20s linear infinite', // adjust duration for speed
       },
     },
   },

@@ -17,10 +17,14 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />
-              <Route path="/men" element={<ShopPage />} />
+              <Route path="/blog" element={<ShopPage />} />
               <Route path="/women" element={<ShopPage />} />
-              <Route path="/kids" element={<ShopPage />} />
+              <Route path="/category" element={<ShopPage />} />
               <Route path="/sale" element={<ShopPage />} />
+              <Route path="/customization" element={<ShopPage />} />
+              <Route path="/terms" element={<ShopPage />} />
+              <Route path="/offers" element={<ShopPage />} />
+              <Route path="/returns" element={<ShopPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/wishlist" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Wishlist - Coming Soon</h1></div>} />
               <Route path="/account" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Account - Coming Soon</h1></div>} />

@@ -6,6 +6,7 @@ import ShopPage from './pages/ShopPage';
 import CartPage from './pages/CartPage';
 import AdminPage from './pages/admin/AdminPage';
 import AdminLayout from './pages/admin/AdminLayout';
+import ProductsCollection from './pages/ProductsCollection';
 
 function App() {
   return (
@@ -26,6 +27,8 @@ function App() {
               <Route path="/offers" element={<ShopPage />} />
               <Route path="/returns" element={<ShopPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/collections" element={<ProductsCollection />} />
+              <Route path="/category/:category" element={<ProductsCollection />} />
               <Route path="/wishlist" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Wishlist - Coming Soon</h1></div>} />
               <Route path="/account" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Account - Coming Soon</h1></div>} />
             </Routes>

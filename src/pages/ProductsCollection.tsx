@@ -14,8 +14,6 @@ const products: Product[] = [
   { id: 2, category: "tshirt",   price: "₹899",  img: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80" },
   { id: 3, category: "croptop",  price: "₹799",  img: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80" },
   { id: 4, category: "onepiece", price: "₹1599", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80" },
-  { id: 5, category: "croptop",  price: "₹1699", img: "https://images.unsplash.com/photo-1520975869019-3ff9c74c54f6?auto=format&fit=crop&w=600&q=80" },
-  { id: 6, category: "tshirt",   price: "₹1099", img: "https://images.unsplash.com/photo-1530126483408-aa533e55bdb2?auto=format&fit=crop&w=600&q=80" },
 ];
 
 const categories = [

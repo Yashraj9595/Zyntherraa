@@ -1,6 +1,7 @@
 import React from 'react';
 import ImageSlider from "./ImageSlider";
-import ClothesCollection from "./ClothesCollection"
+import ClothesCollection from "./ClothesCollection";
+import CategorySection from "./CategorySection";
 const HomePage: React.FC = () => {
   return (
 <>
@@ -17,9 +18,14 @@ const HomePage: React.FC = () => {
   </div>
 </div> */}
 {/*Slider section*/}
-<div className="w-full">
+<div className="w-full h-full">
     <ImageSlider />
   </div>
+
+ <div>
+      <CategorySection />
+    </div>
+
 {/*Our Collections section*/}
 <div className="w-full">
     <ClothesCollection/>

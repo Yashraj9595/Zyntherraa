@@ -178,4 +178,12 @@
     transform: translateZ(0);
     will-change: transform;
   }
+
+  /* ✅ Custom animation or utility classes */
+  @layer utilities {
+    .category-active {
+      opacity: 1 !important;
+      transform: scale(1.05);
+    }
+  }
 }

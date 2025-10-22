@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FaHeart } from "react-icons/fa"; // ✅ Use directly
+import { Heart } from "lucide-react";
 
 const womenWesternWear = [
   {
@@ -52,7 +52,7 @@ const ClothesCollection: React.FC = () => {
 
               {/* Wishlist Icon */}
               <div className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:scale-110 transition">
-                {/* <FaHeart className="text-gray-500 hover:text-red-500 text-lg" /> */}
+                <Heart className="w-5 h-5 text-gray-500 hover:text-red-500" />
               </div>
             </div>
 

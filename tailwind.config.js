@@ -57,7 +57,6 @@ module.exports = {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
-        'gradient-x': 'gradient-x 5s ease infinite',
       },
       keyframes: {
         fadeIn: {
@@ -72,25 +71,6 @@ module.exports = {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
-         marquee: {
-          '0%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(-100%)' },
-        },
-        marquee: {
-          '0%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(-100%)' },
-        },
-         'gradient-x': {
-          '0%, 100%': { 'background-position': '0% 50%' },
-          '50%': { 'background-position': '100% 50%' },
-        },
-        
-      },
-       animation: {
-        marquee: 'marquee 20s linear infinite', // adjust duration for speed
-      },
-      backgroundSize: {
-        '200%': '200% 200%',
       },
     },
   },

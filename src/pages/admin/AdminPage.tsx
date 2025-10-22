@@ -4,6 +4,8 @@ import { useState } from "react";
 import Sidebar from "./sidebar/sidebar";
 import ProductsPage from "./products-page/products-page";
 import OrdersPage from "./orders-page/OrdersPage";
+import CategoriesPage from "./categories-page/CategoriesPage";
+import SettingsPage from "./settings-page";
 
 export default function AdminPage() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -14,6 +16,61 @@ export default function AdminPage() {
         return <ProductsPage />;
       case "orders":
         return <OrdersPage />;
+      case "categories":
+        console.log("Rendering Categories Page");
+        return <CategoriesPage />;
+      case "analytics":
+        return (
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
+            <p className="text-muted-foreground mt-2">View detailed analytics and insights</p>
+            <div className="mt-6 p-6 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">Analytics dashboard coming soon...</p>
+            </div>
+          </div>
+        );
+      case "home":
+        return (
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-foreground">Home Page Management</h1>
+            <p className="text-muted-foreground mt-2">Manage your website's home page content</p>
+            <div className="mt-6 p-6 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">Home page management coming soon...</p>
+            </div>
+          </div>
+        );
+      case "users":
+        return (
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-foreground">Customers</h1>
+            <p className="text-muted-foreground mt-2">Manage customer accounts and information</p>
+            <div className="mt-6 p-6 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">Customer management coming soon...</p>
+            </div>
+          </div>
+        );
+      case "inventory":
+        return (
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+            <p className="text-muted-foreground mt-2">Track and manage product inventory</p>
+            <div className="mt-6 p-6 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">Inventory management coming soon...</p>
+            </div>
+          </div>
+        );
+      case "reports":
+        return (
+          <div className="p-8">
+            <h1 className="text-3xl font-bold text-foreground">Reports</h1>
+            <p className="text-muted-foreground mt-2">Generate and view business reports</p>
+            <div className="mt-6 p-6 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">Reports dashboard coming soon...</p>
+            </div>
+          </div>
+        );
+      case "settings":
+        return <SettingsPage />;
       case "dashboard":
       default:
         return (

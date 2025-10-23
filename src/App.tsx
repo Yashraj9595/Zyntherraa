@@ -27,13 +27,13 @@ function App() {
               <Route path="/kids" element={<ShopPage />} />
               <Route path="/sale" element={<ShopPage />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/wishlist" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Wishlist - Coming Soon</h1></div>} />
-              <Route path="/account" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Account - Coming Soon</h1></div>} />
-              <Route path="/blog" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Blog - Coming Soon</h1></div>} />
-              <Route path="/terms" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Terms & Conditions - Coming Soon</h1></div>} />
-              <Route path="/returns" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Returns & Exchanges - Coming Soon</h1></div>} />
-              <Route path="/offers" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Offers - Coming Soon</h1></div>} />
-              <Route path="/customization" element={<div className="min-h-screen flex items-center justify-center"><h1 className="text-2xl">Customization - Coming Soon</h1></div>} />
+              <Route path="/wishlist" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Wishlist - Coming Soon</h1></div>} />
+              <Route path="/account" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Account - Coming Soon</h1></div>} />
+              <Route path="/blog" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Blog - Coming Soon</h1></div>} />
+              <Route path="/terms" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Terms & Conditions - Coming Soon</h1></div>} />
+              <Route path="/returns" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Returns & Exchanges - Coming Soon</h1></div>} />
+              <Route path="/offers" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Offers - Coming Soon</h1></div>} />
+              <Route path="/customization" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Customization - Coming Soon</h1></div>} />
             </Routes>
           </Layout>
         } />

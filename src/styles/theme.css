@@ -1,0 +1,395 @@
+/* Zyntherraa Theme System - Monochrome Color Palette (Black, White, Gray) */
+
+/* Typography System - Modern Fashion Fonts */
+:root {
+  /* Font Families */
+  --font-logo: 'Gafiya', 'Playfair Display', serif;          /* Gafiya for logo */
+  --font-heading: 'Cormorant Garamond', serif;     /* Sophisticated serif for headings */
+  --font-body: 'Montserrat', sans-serif;           /* Clean, modern sans-serif for body */
+  --font-accent: 'Crimson Text', serif;            /* Stylish serif for accents */
+  --font-elegant: 'Libre Baskerville', serif;      /* Classic serif for special text */
+  /* Primary Colors - Monochrome Theme */
+  --primary-dark: #1a1a1a;      /* Deep black */
+  --primary-light: #f8f9fa;     /* Light gray */
+  
+  /* Generated Color Variations */
+  --primary-darker: #000000;    /* Pure black */
+  --primary-medium: #333333;    /* Dark gray */
+  --primary-lighter: #666666;   /* Medium gray */
+  --primary-pale: #ffffff;      /* Pure white */
+  
+  /* Neutral Colors (grayscale) */
+  --neutral-50: #ffffff;
+  --neutral-100: #f8f9fa;
+  --neutral-200: #e9ecef;
+  --neutral-300: #dee2e6;
+  --neutral-400: #ced4da;
+  --neutral-500: #adb5bd;
+  --neutral-600: #6c757d;
+  --neutral-700: #495057;
+  --neutral-800: #343a40;
+  --neutral-900: #212529;
+  
+  /* Semantic Colors (monochrome theme) */
+  --success: #28a745;
+  --success-light: #f8f9fa;
+  --warning: #ffc107;
+  --warning-light: #fff3cd;
+  --error: #dc3545;
+  --error-light: #f8d7da;
+  --info: #495057;
+  --info-light: #f8f9fa;
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --bg-accent: #212529;
+  
+  /* Text Colors */
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
+  --text-light: #adb5bd;
+  --text-inverse: #ffffff;
+  
+  /* Border Colors */
+  --border-light: #e9ecef;
+  --border-medium: #dee2e6;
+  --border-dark: #ced4da;
+  
+  /* Shadow Colors */
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --shadow-dark: rgba(0, 0, 0, 0.25);
+}
+
+/* Theme Utility Classes */
+.theme-primary {
+  background-color: var(--primary-dark);
+  color: var(--text-inverse);
+}
+
+.theme-primary-light {
+  background-color: var(--primary-light);
+  color: var(--text-primary);
+}
+
+.theme-gradient {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, var(--primary-lighter) 100%);
+  color: var(--text-inverse);
+}
+
+.theme-gradient-light {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--neutral-100) 50%, var(--neutral-50) 100%);
+  color: var(--text-primary);
+}
+
+.theme-text-primary {
+  color: var(--text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--text-muted);
+}
+
+.theme-border {
+  border-color: var(--border-light);
+}
+
+.theme-shadow {
+  box-shadow: 0 4px 6px var(--shadow-light);
+}
+
+.theme-shadow-lg {
+  box-shadow: 0 10px 15px var(--shadow-medium);
+}
+
+.theme-hover-lift {
+  transition: all 0.3s ease;
+}
+
+.theme-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--shadow-dark);
+}
+
+/* Typography Classes */
+.font-logo {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.font-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+
+.font-accent {
+  font-family: var(--font-accent);
+  font-weight: 500;
+}
+
+.font-elegant {
+  font-family: var(--font-elegant);
+  font-weight: 400;
+}
+
+/* Logo Specific Styles */
+.logo-primary {
+  font-family: var(--font-logo);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-gafiya {
+  font-family: 'Gafiya', 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo-secondary {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--primary-dark);
+}
+
+/* Heading Styles */
+.heading-luxury {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.heading-modern {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* Text Styles */
+.text-elegant {
+  font-family: var(--font-elegant);
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.text-accent {
+  font-family: var(--font-accent);
+  font-weight: 500;
+  font-style: italic;
+  color: var(--primary-medium);
+}
+
+/* Custom hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar Hide Utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Button Variants */
+.btn-theme-primary {
+  background-color: var(--primary-dark);
+  color: var(--text-inverse);
+  border: 2px solid var(--primary-dark);
+  transition: all 0.3s ease;
+}
+
+.btn-theme-primary:hover {
+  background-color: var(--primary-darker);
+  border-color: var(--primary-darker);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-medium);
+}
+
+.btn-theme-secondary {
+  background-color: transparent;
+  color: var(--primary-dark);
+  border: 2px solid var(--primary-dark);
+  transition: all 0.3s ease;
+}
+
+.btn-theme-secondary:hover {
+  background-color: var(--primary-dark);
+  color: var(--text-inverse);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-medium);
+}
+
+.btn-theme-light {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border: 2px solid var(--primary-light);
+  transition: all 0.3s ease;
+}
+
+.btn-theme-light:hover {
+  background-color: var(--neutral-100);
+  border-color: var(--neutral-200);
+  transform: translateY(-1px);
+}
+
+/* Card Variants */
+.card-theme {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 2px 4px var(--shadow-light);
+  transition: all 0.3s ease;
+}
+
+.card-theme:hover {
+  box-shadow: 0 8px 25px var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+.card-theme-accent {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--neutral-50) 100%);
+  border: 1px solid var(--border-medium);
+}
+
+/* Navigation Variants */
+.nav-theme {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.nav-theme-dark {
+  background-color: var(--primary-dark);
+  color: var(--text-inverse);
+}
+
+/* Form Elements */
+.input-theme {
+  border: 2px solid var(--border-light);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.input-theme:focus {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+/* Badge Variants */
+.badge-theme {
+  background-color: var(--primary-dark);
+  color: var(--text-inverse);
+}
+
+.badge-theme-light {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.badge-theme-success {
+  background-color: var(--success);
+  color: white;
+}
+
+.badge-theme-warning {
+  background-color: var(--warning);
+  color: white;
+}
+
+/* Animation Enhancements */
+.theme-fade-in {
+  animation: themeSlideUp 0.6s ease-out forwards;
+}
+
+@keyframes themeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.theme-pulse {
+  animation: themePulse 2s ease-in-out infinite;
+}
+
+@keyframes themePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(26, 26, 26, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(26, 26, 26, 0);
+  }
+}
+
+/* Bottom Navigation Spacing */
+.bottom-nav-safe {
+  padding-bottom: 5rem; /* 80px - space for bottom nav */
+}
+
+@media (min-width: 768px) {
+  .bottom-nav-safe {
+    padding-bottom: 0; /* Remove padding on desktop */
+  }
+}
+
+/* Safe area for devices with home indicator */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.h-safe-bottom {
+  height: env(safe-area-inset-bottom);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  .theme-shadow-lg {
+    box-shadow: 0 4px 6px var(--shadow-light);
+  }
+  
+  .theme-hover-lift:hover {
+    transform: translateY(-1px);
+  }
+}

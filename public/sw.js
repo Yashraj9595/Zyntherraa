@@ -9,9 +9,8 @@ const urlsToCache = [
   '/static/js/bundle.js',
   '/static/css/main.css',
   '/manifest.json',
-  '/favicon.ico',
-  '/logo192.png',
-  '/logo512.png'
+  '/logo/logo192x192.png',
+  '/logo/logo512x512.jpg'
 ];
 
 // Install event - cache static assets and notify clients
@@ -165,7 +164,7 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'New notification from Zyntherraa!',
-    icon: '/logo192.png',
+    icon: '/logo/logo192x192.png',
     badge: '/favicon.ico',
     vibrate: [100, 50, 100],
     data: {
@@ -176,7 +175,7 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Open App',
-        icon: '/logo192.png'
+        icon: '/logo/logo192x192.png'
       },
       {
         action: 'close',

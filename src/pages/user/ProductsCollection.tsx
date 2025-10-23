@@ -57,18 +57,18 @@ const ProductsCollection: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10">
-      <h2 className="text-2xl md:text-4xl font-bold text-center mb-6">Our Collections</h2>
+    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10 bottom-nav-safe">
+      <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-center mb-4 sm:mb-6">Our Collections</h2>
 
       {/* Tabs */}
-      <div className="flex justify-center gap-4 mb-8 flex-wrap">
+      <div className="flex justify-center gap-2 sm:gap-4 mb-6 sm:mb-8 flex-wrap px-2">
         {categories.map((cat) => {
           const isActive = activeTab === cat.value;
           return (
             <button
               key={cat.value}
               onClick={() => handleCategoryClick(cat.value)}
-              className={`px-4 py-2 rounded-full border transition ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border transition text-sm sm:text-base ${
                 isActive
                   ? "bg-black text-white border-black"
                   : "bg-white text-gray-800 border-gray-300 hover:bg-black hover:text-white"
@@ -81,14 +81,14 @@ const ProductsCollection: React.FC = () => {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
         {filteredProducts.map((product) => (
           <div
             key={product.id}
-            className="group relative cursor-pointer rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition duration-300 bg-white"
+            className="group relative cursor-pointer rounded-lg sm:rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition duration-300 bg-white"
           >
             <div
-              className="relative w-full h-64 overflow-hidden"
+              className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden"
               onClick={() => handleProductClick(product.category)}
             >
               <img
@@ -103,22 +103,22 @@ const ProductsCollection: React.FC = () => {
                   e.stopPropagation();
                   handleAddToCart(product);
                 }}
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black text-white py-2 px-4 rounded-lg opacity-0 group-hover:opacity-100 transition duration-300"
+                className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-black text-white py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg opacity-0 group-hover:opacity-100 transition duration-300 text-xs sm:text-sm"
               >
                 Add to Cart
               </button>
             </div>
 
             {/* Price only */}
-            <div className="py-3 text-center">
-              <p className="text-lg font-semibold">{product.price}</p>
+            <div className="py-2 sm:py-3 text-center">
+              <p className="text-sm sm:text-lg font-semibold">{product.price}</p>
             </div>
           </div>
         ))}
 
         {filteredProducts.length === 0 && (
-          <div className="col-span-full text-center py-20 text-gray-500">
-            No products found in this category.
+          <div className="col-span-full text-center py-12 sm:py-20 text-gray-500">
+            <p className="text-sm sm:text-base">No products found in this category.</p>
           </div>
         )}
       </div>

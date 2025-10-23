@@ -168,13 +168,31 @@ const Footer: React.FC = () => {
               <div className="mt-6">
                 <h5 className="text-white font-semibold mb-3 text-sm">Follow Us</h5>
                 <div className="flex space-x-3">
-                  <a href="#" className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800">
+                  <a
+                    href="https://www.instagram.com/zyntherraa"
+                    aria-label="Zyntherraa on Instagram"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800"
+                  >
                     <Instagram className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
                   </a>
-                  <a href="#" className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800">
+                  <a
+                    href="https://www.facebook.com/zyntherraa"
+                    aria-label="Zyntherraa on Facebook"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800"
+                  >
                     <Facebook className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
                   </a>
-                  <a href="#" className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800">
+                  <a
+                    href="https://twitter.com/zyntherraa"
+                    aria-label="Zyntherraa on Twitter"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 border border-gray-700 hover:border-gray-500 rounded-lg transition-all duration-300 group hover:bg-gray-800"
+                  >
                     <Twitter className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
                   </a>
                 </div>

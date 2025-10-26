@@ -46,7 +46,7 @@ const ProductsCollection: React.FC = () => {
       : products.filter((p) => p.category === activeTab);
   }, [activeTab]);
 
-  const handleProductClick = (category: string) => {
+  const handleProductClick = (category: any) => {
     // Example: keep user on same page but update url to category (optional)
     navigate(`/category/${category}`);
   };
@@ -55,6 +55,11 @@ const ProductsCollection: React.FC = () => {
     // Replace with your cart logic (context/redux/api)
     console.log("Add to cart:", product);
   };
+const selectProductClick = (productId: any) => {
+    navigate(`/product/${productId}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10 bottom-nav-safe">
@@ -102,6 +107,7 @@ const ProductsCollection: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAddToCart(product);
+                  selectProductClick(product.id);
                 }}
                 className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-black text-white py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg opacity-0 group-hover:opacity-100 transition duration-300 text-xs sm:text-sm"
               >

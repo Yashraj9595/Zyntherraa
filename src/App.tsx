@@ -8,6 +8,7 @@ import ProductsCollection from './pages/user/ProductsCollection';
 import AdminRouter from './pages/admin/AdminRouter';
 import AdminLayout from './pages/admin/AdminLayout';
 import { CacheManager } from './components/CacheManager';
+import ProductDetails from "./pages/user/ProductDetails";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="/returns" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Returns & Exchanges - Coming Soon</h1></div>} />
               <Route path="/offers" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Offers - Coming Soon</h1></div>} />
               <Route path="/customization" element={<div className="min-h-screen flex items-center justify-center bottom-nav-safe"><h1 className="text-2xl">Customization - Coming Soon</h1></div>} />
+              <Route path="/product/:id" element={<ProductDetails />} />
             </Routes>
           </Layout>
         } />

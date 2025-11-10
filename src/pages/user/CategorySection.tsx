@@ -51,20 +51,16 @@ const CategorySection: React.FC = () => {
 
   return (
     <section className="py-6 sm:py-8 theme-gradient-light relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full">
-        <div className="absolute top-10 left-10 w-32 h-32 rounded-full opacity-30" style={{backgroundColor: 'var(--primary-light)'}}></div>
-        <div className="absolute bottom-10 right-10 w-24 h-24 rounded-full opacity-30" style={{backgroundColor: 'var(--primary-medium)'}}></div>
-      </div>
+
       
       <div className="container mx-auto px-4 relative z-10">
         {/* Heading */}
         <div className="text-center mb-6">
           <h2 className="heading-luxury text-xl sm:text-2xl md:text-3xl mb-2">
-            Shop by Category
+            Shop by category
           </h2>
           <p className="text-elegant text-sm sm:text-base">
-            Discover our curated collections
+            Explore our curated collections.
           </p>
         </div>
 

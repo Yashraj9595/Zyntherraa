@@ -17,7 +17,17 @@ router.get('/', async (req, res) => {
     let filter: any = {};
     
     if (category) {
-      filter.category = category;
+      // Convert URL slug format (e.g., "one-piece") to proper format for case-insensitive matching
+      // Handle both slug format and direct category name
+      const categoryName = category
+        .replace(/-/g, ' ') // Replace hyphens with spaces
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      
+      // Escape special regex characters and use case-insensitive matching
+      const escapedCategory = categoryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.category = { $regex: new RegExp(`^${escapedCategory}$`, 'i') };
     }
     
     if (status) {

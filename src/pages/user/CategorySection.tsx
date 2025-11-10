@@ -57,10 +57,10 @@ const CategorySection: React.FC = () => {
         {/* Heading */}
         <div className="text-center mb-6">
           <h2 className="heading-luxury text-xl sm:text-2xl md:text-3xl mb-2">
-            Shop by category
+            Shop by Category
           </h2>
           <p className="text-elegant text-sm sm:text-base">
-            Explore our curated collections.
+            Discover our curated collections
           </p>
         </div>
 

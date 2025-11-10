@@ -54,8 +54,15 @@ const ProductsCollection: React.FC = () => {
       setLoading(true);
       setError(null);
       const params: any = { status: 'Active' };
-      if (activeTab !== "all") {
-        params.category = activeTab;
+      
+      // Only add category filter if not viewing all products
+      if (activeTab !== "all" && activeTab) {
+        // Convert URL slug to category name format (e.g., "one-piece" -> "One Piece")
+        const categoryName = activeTab
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+        params.category = categoryName;
       }
       
       const response = await productApi.getAll(params);
@@ -96,24 +103,44 @@ const ProductsCollection: React.FC = () => {
     fetchCategories();
   }, [fetchProducts, fetchCategories]);
 
+  // Helper function to convert category name to URL slug
+  const categoryToSlug = (categoryName: string): string => {
+    return categoryName.toLowerCase().replace(/\s+/g, '-');
+  };
+
   // navigate to category route (URL change only)
   const handleCategoryClick = (category: string) => {
-    if (category === 'all') {
+    if (category === 'all' || category.toLowerCase() === 'all') {
       navigate('/collections');
     } else {
-      navigate(`/category/${category}`);
+      const slug = categoryToSlug(category);
+      navigate(`/category/${slug}`);
     }
   };
 
   // filter products based on activeTab (memoized)
+  // Note: Backend already filters by category, but we keep this for client-side filtering if needed
   const filteredProducts = useMemo(() => {
     if (activeTab === 'all') {
       return products;
     }
-    return products.filter((p) =>
-      p.category.toLowerCase() === activeTab.toLowerCase() ||
-      (p.subcategory && p.subcategory.toLowerCase() === activeTab.toLowerCase())
-    );
+    // Convert URL slug to category name for comparison
+    const categoryName = activeTab
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    return products.filter((p) => {
+      const productCategory = p.category.toLowerCase();
+      const productSubcategory = p.subcategory?.toLowerCase() || '';
+      const searchCategory = categoryName.toLowerCase();
+      const searchSlug = activeTab.toLowerCase();
+      
+      return productCategory === searchCategory || 
+             productSubcategory === searchCategory ||
+             productCategory.replace(/\s+/g, '-') === searchSlug ||
+             productSubcategory.replace(/\s+/g, '-') === searchSlug;
+    });
   }, [activeTab, products]);
 
   const handleProductClick = (product: Product) => {
@@ -150,20 +177,23 @@ const ProductsCollection: React.FC = () => {
                   All Products
                 </button>
               </li>
-              {categories.map((category) => (
-                <li key={category.name}>
-                  <button
-                    onClick={() => handleCategoryClick(category.name.toLowerCase())}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                      activeTab === category.name.toLowerCase()
-                        ? 'bg-primary text-white'
-                        : 'hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                </li>
-              ))}
+              {categories.map((category) => {
+                const categorySlug = categoryToSlug(category.name);
+                return (
+                  <li key={category.name}>
+                    <button
+                      onClick={() => handleCategoryClick(category.name)}
+                      className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                        activeTab === categorySlug
+                          ? 'bg-primary text-white'
+                          : 'hover:bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
@@ -171,11 +201,16 @@ const ProductsCollection: React.FC = () => {
         {/* Main Content */}
         <div className="md:w-3/4">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 capitalize">
-              {activeTab === 'all' ? 'All Products' : activeTab}
+            <h1 className="text-3xl font-bold text-gray-800">
+              {activeTab === 'all' 
+                ? 'All Products' 
+                : activeTab
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')}
             </h1>
             <p className="text-gray-600 mt-2">
-              Showing {filteredProducts.length} products
+              Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
             </p>
           </div>
 

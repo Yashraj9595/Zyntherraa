@@ -19,7 +19,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <CacheManager appVersion="1.0.1" showNotification={true} />
+        <CacheManager appVersion="1.0.2" showNotification={true} />
         <Routes>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />

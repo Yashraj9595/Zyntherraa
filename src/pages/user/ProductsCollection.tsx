@@ -122,11 +122,6 @@ const ProductsCollection: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleAddToCart = (product: Product) => {
-    // Replace with your cart logic (context/redux/api)
-    console.log("Add to cart:", product);
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">

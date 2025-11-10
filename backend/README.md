@@ -50,7 +50,7 @@ This is the backend API for the Zyntherraa e-commerce application, built with No
 - `MONGO_URI` - MongoDB connection string
 - `JWT_SECRET` - Secret key for JWT token generation
 - `UPLOAD_PATH` - Path for file uploads (default: ./uploads)
-- `CORS_ORIGIN` - CORS origin (optional, for development)
+- `CORS_ORIGIN` - Comma-separated list of allowed origins (set to https://zyntherraa.com in production, use http://localhost:3000 for local dev)
 
 ## Available Scripts
 
@@ -144,3 +144,22 @@ Each file is given a unique name to prevent conflicts.
 - paidAt (date, optional)
 - isDelivered (boolean)
 - deliveredAt (date, optional)
+## Deployment Verification
+
+Once the backend is deployed, run the following checks:
+
+1. **Health endpoint**
+   - Command: curl -i https://myserver.zyntherraa.com/api/health
+   - Expect HTTP 200 and the header Access-Control-Allow-Origin: https://zyntherraa.com.
+
+2. **Protected route (optional)**
+   - Command: curl -i -H "Authorization: Bearer YOUR_JWT_TOKEN" https://myserver.zyntherraa.com/api/users/profile
+   - Expect HTTP 200 with user data; 401 means the token is invalid or expired.
+
+3. **Monitor server logs**
+   - Tail your process logs (PM2, Docker, systemd, etc.) while issuing API requests. Any 5xx errors must be resolved before shipping.
+
+4. **Check CORS in the browser**
+   - In your browser dev tools, inspect responses when loading https://zyntherraa.com. All API calls should include the CORS header mentioned above. Missing headers mean CORS_ORIGIN is misconfigured or the server was not restarted after changing it.
+
+These quick checks confirm that the API, authentication, and CORS configuration are working in production.

@@ -8,7 +8,7 @@ import { connectDB } from './config/db';
 dotenv.config();
 
 // Use MongoDB connection string from environment or default to localhost
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zyntherraa';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/zyntherraa';
 
 // Import routes
 import productRoutes from './routes/products';
@@ -16,6 +16,7 @@ import categoryRoutes from './routes/categories';
 import userRoutes from './routes/users';
 import orderRoutes from './routes/orders';
 import uploadRoutes from './routes/upload';
+import statusRoutes from './routes/status';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -66,6 +67,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/status', statusRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -93,4 +95,5 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Allowed origins: ${allowedOrigins.length ? allowedOrigins.join(', ') : 'ALL'}`);
 });

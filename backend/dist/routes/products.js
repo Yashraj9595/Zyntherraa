@@ -12,7 +12,13 @@ router.get('/', async (req, res) => {
         const { category, search, status, page = '1', limit = '20' } = req.query;
         let filter = {};
         if (category) {
-            filter.category = category;
+            const categoryName = category
+                .replace(/-/g, ' ')
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+            const escapedCategory = categoryName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            filter.category = { $regex: new RegExp(`^${escapedCategory}$`, 'i') };
         }
         if (status) {
             filter.status = status;

@@ -21,8 +21,15 @@ const PORT = process.env.PORT || 5000;
 (0, db_1.connectDB)(MONGODB_URI);
 const corsOrigins = process.env.CORS_ORIGIN;
 const allowedOrigins = corsOrigins
-    ? corsOrigins.split(',').map((origin) => origin.trim()).filter(Boolean)
+    ? corsOrigins
+        .replace(/^['"]|['"]$/g, '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
     : [];
+console.log('CORS Configuration:');
+console.log('  Raw CORS_ORIGIN:', corsOrigins);
+console.log('  Parsed origins:', allowedOrigins);
 const corsOptions = allowedOrigins.length
     ? {
         origin: (origin, callback) => {
@@ -32,13 +39,19 @@ const corsOptions = allowedOrigins.length
             if (allowedOrigins.includes(origin)) {
                 return callback(null, true);
             }
+            console.warn(`CORS: Origin "${origin}" not allowed. Allowed origins:`, allowedOrigins);
             return callback(new Error(`Origin ${origin} not allowed by CORS`));
         },
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        exposedHeaders: ['Content-Range', 'X-Content-Range'],
     }
     : {
         origin: true,
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     };
 app.use((0, cors_1.default)(corsOptions));
 app.options('*', (0, cors_1.default)(corsOptions));
@@ -59,15 +72,22 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
-app.get('*', (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, '../../build/index.html'));
-});
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        message: 'Something went wrong!',
+    if (err.message && err.message.includes('CORS')) {
+        console.error('CORS Error:', err.message);
+        return res.status(403).json({
+            message: 'CORS policy violation',
+            error: process.env.NODE_ENV === 'development' ? err.message : 'Origin not allowed'
+        });
+    }
+    console.error('Server Error:', err.stack || err.message);
+    res.status(err.status || 500).json({
+        message: err.message || 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.message : {}
     });
+});
+app.get('*', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, '../../build/index.html'));
 });
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

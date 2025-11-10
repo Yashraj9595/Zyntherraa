@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { connectDB } from './config/db';
@@ -23,8 +23,34 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB(MONGODB_URI);
 
-// Middleware
-app.use(cors());
+// Configure CORS
+const corsOrigins = process.env.CORS_ORIGIN;
+const allowedOrigins = corsOrigins
+  ? corsOrigins.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+
+const corsOptions: CorsOptions = allowedOrigins.length
+  ? {
+      origin: (origin, callback) => {
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      },
+      credentials: true,
+    }
+  : {
+      origin: true,
+      credentials: true,
+    };
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

@@ -73,9 +73,9 @@ self.addEventListener('fetch', (event) => {
       event.request.headers.get('cache-control') === 'no-cache') {
     
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful responses
+      (async () => {
+        try {
+          const response = await fetch(event.request);
           if (response && response.status === 200 && response.type === 'basic') {
             const responseToCache = response.clone();
             caches.open(DYNAMIC_CACHE)
@@ -84,35 +84,34 @@ self.addEventListener('fetch', (event) => {
               });
           }
           return response;
-        })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(event.request)
-            .then((cachedResponse) => {
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              // Return offline page for navigation requests
-              if (event.request.destination === 'document') {
-                return caches.match('/');
-              }
-            });
-        })
+        } catch (error) {
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (event.request.destination === 'document') {
+            const offlinePage = await caches.match('/');
+            if (offlinePage) {
+              return offlinePage;
+            }
+          }
+          return new Response('', { status: 502, statusText: 'Service Unavailable' });
+        }
+      })()
     );
     return;
   }
 
   // Cache-first strategy for static assets
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
+    (async () => {
+      try {
+        const cachedResponse = await caches.match(event.request);
         if (cachedResponse) {
-          // Check if it's a static asset that might need updating
           const cacheDate = cachedResponse.headers.get('date');
-          const isOld = cacheDate && (Date.now() - new Date(cacheDate).getTime()) > 3600000; // 1 hour
-          
+          const isOld = cacheDate && (Date.now() - new Date(cacheDate).getTime()) > 3600000;
+
           if (isOld && navigator.onLine) {
-            // Fetch fresh version in background
             fetch(event.request)
               .then((response) => {
                 if (response && response.status === 200) {
@@ -122,39 +121,34 @@ self.addEventListener('fetch', (event) => {
                     });
                 }
               })
-              .catch(() => {
-                // Ignore network errors for background updates
-              });
+              .catch(() => {});
           }
-          
+
           return cachedResponse;
         }
 
-        return fetch(event.request)
-          .then((response) => {
-            // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+        const response = await fetch(event.request);
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
 
-            // Clone the response
-            const responseToCache = response.clone();
-
-            // Cache static content
-            caches.open(STATIC_CACHE)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          })
-          .catch(() => {
-            // Return offline page for navigation requests
-            if (event.request.destination === 'document') {
-              return caches.match('/');
-            }
+        const responseToCache = response.clone();
+        caches.open(STATIC_CACHE)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
           });
-      })
+
+        return response;
+      } catch (error) {
+        if (event.request.destination === 'document') {
+          const offlinePage = await caches.match('/');
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
+        return new Response('', { status: 502, statusText: 'Service Unavailable' });
+      }
+    })()
   );
 });
 

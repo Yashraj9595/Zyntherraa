@@ -26,31 +26,54 @@ connectDB(MONGODB_URI);
 
 // Configure CORS
 const corsOrigins = process.env.CORS_ORIGIN;
+// Remove quotes if present and split by comma
 const allowedOrigins = corsOrigins
-  ? corsOrigins.split(',').map((origin) => origin.trim()).filter(Boolean)
+  ? corsOrigins
+      .replace(/^['"]|['"]$/g, '') // Remove surrounding quotes
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean)
   : [];
+
+console.log('CORS Configuration:');
+console.log('  Raw CORS_ORIGIN:', corsOrigins);
+console.log('  Parsed origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = allowedOrigins.length
   ? {
       origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) {
           return callback(null, true);
         }
 
+        // Check if origin is in allowed list
         if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
 
+        // Log CORS rejection for debugging
+        console.warn(`CORS: Origin "${origin}" not allowed. Allowed origins:`, allowedOrigins);
+        
+        // Return error for CORS rejection
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
       },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      exposedHeaders: ['Content-Range', 'X-Content-Range'],
     }
   : {
       origin: true,
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -78,18 +101,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Catch-all handler for React routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../build/index.html'));
-});
-
-// Error handling middleware
+// Error handling middleware (must be after all API routes but before catch-all)
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
+  // Handle CORS errors specifically
+  if (err.message && err.message.includes('CORS')) {
+    console.error('CORS Error:', err.message);
+    return res.status(403).json({ 
+      message: 'CORS policy violation',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Origin not allowed'
+    });
+  }
+
+  console.error('Server Error:', err.stack || err.message);
+  res.status(err.status || 500).json({ 
+    message: err.message || 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
+});
+
+// Catch-all handler for React routing (must be last)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../build/index.html'));
 });
 
 app.listen(PORT, () => {

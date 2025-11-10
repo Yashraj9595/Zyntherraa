@@ -6,29 +6,54 @@ import { Button } from "../../../components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
-import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Search, Filter, AlertCircle, CheckCircle } from "lucide-react"
-import { categoriesData } from "../../../data/categories"
-import type { Category, Subcategory } from "../../../data/categories"
+import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Search, Filter, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { categoryApi } from "../../../utils/api"
+
+// Backend category structure
+interface BackendSubcategory {
+  _id: string
+  name: string
+  productCount: number
+  status: 'Active' | 'Inactive'
+  parentId: string
+}
+
+interface BackendCategory {
+  _id: string
+  name: string
+  productCount: number
+  status: 'Active' | 'Inactive'
+  subcategories: BackendSubcategory[]
+  createdAt?: string
+  updatedAt?: string
+  expanded?: boolean // Frontend-only property
+}
 
 // Define the form state types
 type FormMode = "add" | "edit" | "delete"
 type ItemType = "category" | "subcategory"
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(categoriesData)
+  const [categories, setCategories] = useState<BackendCategory[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState<"All" | "Active" | "Inactive">("All")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [formMode, setFormMode] = useState<FormMode>("add")
   const [itemType, setItemType] = useState<ItemType>("category")
-  const [selectedItem, setSelectedItem] = useState<Category | Subcategory | null>(null)
+  const [selectedItem, setSelectedItem] = useState<BackendCategory | BackendSubcategory | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     status: "Active" as "Active" | "Inactive",
-    parentId: null as number | null
+    parentId: null as string | null
   })
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // Fetch categories from API
+  useEffect(() => {
+    fetchCategories()
+  }, [])
 
   // Reset success/error messages after a delay
   useEffect(() => {
@@ -41,17 +66,36 @@ export default function CategoriesPage() {
     }
   }, [success, error])
 
-  const toggleCategoryExpansion = (categoryId: number) => {
+  const fetchCategories = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await categoryApi.getAll()
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        const categoriesData = Array.isArray(response.data) ? response.data : []
+        // Add expanded property for UI
+        setCategories(categoriesData.map((cat: BackendCategory) => ({ ...cat, expanded: false })))
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch categories')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleCategoryExpansion = (categoryId: string) => {
     setCategories(prev => 
       prev.map(cat => 
-        cat.id === categoryId 
+        cat._id === categoryId 
           ? { ...cat, expanded: !cat.expanded }
           : cat
       )
     )
   }
 
-  const openDialog = (mode: FormMode, type: ItemType, item: Category | Subcategory | null = null, parentId: number | null = null) => {
+  const openDialog = (mode: FormMode, type: ItemType, item: BackendCategory | BackendSubcategory | null = null, parentId: string | null = null) => {
     setFormMode(mode)
     setItemType(type)
     setSelectedItem(item)
@@ -101,7 +145,7 @@ export default function CategoriesPage() {
     if (formMode === "add") {
       if (formData.parentId) {
         // Adding subcategory
-        const parentCategory = categories.find(cat => cat.id === formData.parentId)
+        const parentCategory = categories.find(cat => cat._id === formData.parentId)
         if (parentCategory) {
           const duplicate = parentCategory.subcategories.find(
             sub => sub.name.toLowerCase() === formData.name.trim().toLowerCase()
@@ -126,10 +170,10 @@ export default function CategoriesPage() {
       if (formData.name.trim() !== selectedItem.name) {
         if ('parentId' in selectedItem) {
           // Editing subcategory
-          const parentCategory = categories.find(cat => cat.id === formData.parentId)
+          const parentCategory = categories.find(cat => cat._id === formData.parentId)
           if (parentCategory) {
             const duplicate = parentCategory.subcategories.find(
-              sub => sub.id !== selectedItem.id && sub.name.toLowerCase() === formData.name.trim().toLowerCase()
+              sub => sub._id !== selectedItem._id && sub.name.toLowerCase() === formData.name.trim().toLowerCase()
             )
             if (duplicate) {
               setError("A subcategory with this name already exists in this category")
@@ -139,7 +183,7 @@ export default function CategoriesPage() {
         } else {
           // Editing main category
           const duplicate = categories.find(
-            cat => cat.id !== selectedItem.id && cat.name.toLowerCase() === formData.name.trim().toLowerCase()
+            cat => cat._id !== selectedItem._id && cat.name.toLowerCase() === formData.name.trim().toLowerCase()
           )
           if (duplicate) {
             setError("A category with this name already exists")
@@ -152,109 +196,109 @@ export default function CategoriesPage() {
     return true
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return
     
-    if (formMode === "add") {
-      if (formData.parentId) {
-        // Adding subcategory
-        const newSubcategory: Subcategory = {
-          id: Date.now(),
-          name: formData.name.trim(),
-          productCount: 0,
-          status: formData.status,
-          parentId: formData.parentId
+    try {
+      setError(null)
+      
+      if (formMode === "add") {
+        if (formData.parentId) {
+          // Adding subcategory
+          const response = await categoryApi.addSubcategory(formData.parentId, {
+            name: formData.name.trim(),
+            status: formData.status,
+            productCount: 0
+          })
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Subcategory added successfully!")
+        } else {
+          // Adding main category
+          const response = await categoryApi.create({
+            name: formData.name.trim(),
+            status: formData.status,
+            productCount: 0,
+            subcategories: []
+          })
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Category added successfully!")
         }
-
-        setCategories(prev =>
-          prev.map(cat =>
-            cat.id === formData.parentId
-              ? { 
-                  ...cat, 
-                  subcategories: [...cat.subcategories, newSubcategory],
-                  productCount: cat.productCount + 0 // Not changing parent count when adding subcategory
-                }
-              : cat
+      } else if (formMode === "edit" && selectedItem) {
+        if ('parentId' in selectedItem) {
+          // Editing subcategory
+          const response = await categoryApi.updateSubcategory(
+            selectedItem.parentId,
+            selectedItem._id,
+            {
+              name: formData.name.trim(),
+              status: formData.status
+            }
           )
-        )
-        setSuccess("Subcategory added successfully!")
-      } else {
-        // Adding main category
-        const newCategory: Category = {
-          id: Date.now(),
-          name: formData.name.trim(),
-          productCount: 0,
-          status: formData.status,
-          subcategories: [],
-          expanded: false
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Subcategory updated successfully!")
+        } else {
+          // Editing main category
+          const response = await categoryApi.update(selectedItem._id, {
+            name: formData.name.trim(),
+            status: formData.status
+          })
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Category updated successfully!")
         }
-
-        setCategories(prev => [...prev, newCategory])
-        setSuccess("Category added successfully!")
-      }
-    } else if (formMode === "edit" && selectedItem) {
-      if ('parentId' in selectedItem) {
-        // Editing subcategory
-        setCategories(prev =>
-          prev.map(cat => ({
-            ...cat,
-            subcategories: cat.subcategories.map(sub =>
-              sub.id === selectedItem.id
-                ? { 
-                    ...sub, 
-                    name: formData.name.trim(),
-                    status: formData.status
-                  }
-                : sub
-            )
-          }))
-        )
-        setSuccess("Subcategory updated successfully!")
-      } else {
-        // Editing main category
-        setCategories(prev =>
-          prev.map(cat =>
-            cat.id === selectedItem.id
-              ? { 
-                  ...cat, 
-                  name: formData.name.trim(),
-                  status: formData.status
-                }
-              : cat
+      } else if (formMode === "delete" && selectedItem) {
+        if ('parentId' in selectedItem) {
+          // Deleting subcategory
+          const response = await categoryApi.deleteSubcategory(
+            selectedItem.parentId,
+            selectedItem._id
           )
-        )
-        setSuccess("Category updated successfully!")
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Subcategory deleted successfully!")
+        } else {
+          // Deleting main category
+          const response = await categoryApi.delete(selectedItem._id)
+          if (response.error) {
+            setError(response.error)
+            return
+          }
+          setSuccess("Category deleted successfully!")
+        }
       }
-    } else if (formMode === "delete" && selectedItem) {
-      if ('parentId' in selectedItem) {
-        // Deleting subcategory
-        setCategories(prev =>
-          prev.map(cat => ({
-            ...cat,
-            subcategories: cat.subcategories.filter(sub => sub.id !== selectedItem.id),
-            productCount: cat.productCount - selectedItem.productCount
-          }))
-        )
-        setSuccess("Subcategory deleted successfully!")
-      } else {
-        // Deleting main category
-        setCategories(prev => prev.filter(cat => cat.id !== selectedItem.id))
-        setSuccess("Category deleted successfully!")
-      }
+
+      // Refresh categories after any operation
+      await fetchCategories()
+      closeDialog()
+    } catch (err: any) {
+      setError(err.message || 'Operation failed')
     }
-
-    closeDialog()
   }
 
-  const handleDelete = (item: Category | Subcategory) => {
+  const handleDelete = (item: BackendCategory | BackendSubcategory) => {
     setSelectedItem(item)
     setFormMode("delete")
     setIsDialogOpen(true)
   }
 
   const filteredCategories = categories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = !searchTerm || (
+      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.subcategories.some(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
     
     const matchesFilter = filterStatus === "All" || category.status === filterStatus
 
@@ -297,6 +341,14 @@ export default function CategoriesPage() {
           Add Category
         </Button>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="animate-spin" size={32} />
+          <span className="ml-2">Loading categories...</span>
+        </div>
+      )}
 
       {/* Success/Error Messages */}
       {success && (
@@ -390,13 +442,13 @@ export default function CategoriesPage() {
           </Card>
         ) : (
           filteredCategories.map((category) => (
-            <Card key={category.id} className="overflow-hidden">
+            <Card key={category._id} className="overflow-hidden">
               <div className="p-6">
                 {/* Main Category */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => toggleCategoryExpansion(category.id)}
+                      onClick={() => toggleCategoryExpansion(category._id)}
                       className="p-1 hover:bg-muted rounded"
                       disabled={category.subcategories.length === 0}
                     >
@@ -423,7 +475,7 @@ export default function CategoriesPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openDialog("add", "subcategory", null, category.id)}
+                        onClick={() => openDialog("add", "subcategory", null, category._id)}
                       >
                         <Plus size={16} />
                       </Button>
@@ -450,7 +502,7 @@ export default function CategoriesPage() {
                   <div className="mt-4 ml-0 md:ml-8 space-y-2">
                     {category.subcategories.map((subcategory) => (
                       <div
-                        key={subcategory.id}
+                        key={subcategory._id}
                         className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-muted/50 rounded-lg gap-3"
                       >
                         <div>
@@ -502,12 +554,12 @@ export default function CategoriesPage() {
             </DialogTitle>
           </DialogHeader>
           
-          {formMode === "delete" ? (
+              {formMode === "delete" ? (
             <div className="space-y-4">
               <p>Are you sure you want to delete "<strong>{selectedItem?.name}</strong>"?</p>
-              {selectedItem && !('parentId' in selectedItem) && selectedItem.subcategories.length > 0 && (
+              {selectedItem && !('parentId' in selectedItem) && (selectedItem as BackendCategory).subcategories.length > 0 && (
                 <p className="text-sm text-destructive">
-                  This will also delete all {selectedItem.subcategories.length} subcategories.
+                  This will also delete all {(selectedItem as BackendCategory).subcategories.length} subcategories.
                 </p>
               )}
             </div>
@@ -542,7 +594,7 @@ export default function CategoriesPage() {
                 <div>
                   <Label>Parent Category</Label>
                   <p className="text-sm text-muted-foreground">
-                    {categories.find(cat => cat.id === formData.parentId)?.name}
+                    {categories.find(cat => cat._id === formData.parentId)?.name}
                   </p>
                 </div>
               )}

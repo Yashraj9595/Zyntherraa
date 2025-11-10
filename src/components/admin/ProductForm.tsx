@@ -1,6 +1,19 @@
 import { useState } from "react"
 import { X, Image, Video, Edit } from "lucide-react"
 import { CategorySelect } from "../CategorySelect"
+import { uploadApi } from "../../utils/api"
+
+// Define the response structure for file uploads
+interface UploadResponse {
+  message: string;
+  file: {
+    filename: string;
+    path: string;
+    fullPath: string;
+    size: number;
+    mimetype: string;
+  };
+}
 
 interface ProductVariant {
   id: string
@@ -17,7 +30,8 @@ interface ProductVariant {
 }
 
 interface Product {
-  id: number
+  id?: number
+  _id?: string
   title: string
   description: string
   category: string
@@ -29,7 +43,7 @@ interface Product {
 }
 
 interface ProductFormProps {
-  initialData?: Product
+  initialData?: Partial<Product>
   onSubmit: (product: Product) => void
   onCancel: () => void
   isEditing?: boolean
@@ -251,15 +265,59 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isEditing = false
     })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title || !formData.category || formData.variants.length === 0) {
       alert("Please fill in all required fields and add at least one variant")
       return
     }
     
+    // Upload all files first and get their URLs
+    const updatedVariants = await Promise.all(formData.variants.map(async (variant) => {
+      // Upload images
+      const uploadedImages = await Promise.all(variant.images.map(async (image) => {
+        if (image instanceof File) {
+          try {
+            const response = await uploadApi.upload(image);
+            if (response.data && (response.data as unknown as UploadResponse).file) {
+              return (response.data as unknown as UploadResponse).file.path; // Return the file path
+            }
+            return ""; // Return empty string if upload failed
+          } catch (error) {
+            console.error("Image upload failed:", error);
+            return ""; // Return empty string if upload failed
+          }
+        }
+        return image; // Already a string URL
+      }));
+      
+      // Upload videos
+      const uploadedVideos = await Promise.all(variant.videos.map(async (video) => {
+        if (video instanceof File) {
+          try {
+            const response = await uploadApi.upload(video);
+            if (response.data && (response.data as unknown as UploadResponse).file) {
+              return (response.data as unknown as UploadResponse).file.path; // Return the file path
+            }
+            return ""; // Return empty string if upload failed
+          } catch (error) {
+            console.error("Video upload failed:", error);
+            return ""; // Return empty string if upload failed
+          }
+        }
+        return video; // Already a string URL
+      }));
+      
+      return {
+        ...variant,
+        images: uploadedImages.filter(url => url !== ""), // Filter out failed uploads
+        videos: uploadedVideos.filter(url => url !== ""), // Filter out failed uploads
+      };
+    }));
+    
     const product: Product = {
       id: initialData?.id || Date.now(),
       ...formData,
+      variants: updatedVariants,
       status: initialData?.status || "Active"
     }
     
@@ -288,7 +346,7 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isEditing = false
   };
 
   // Function to save edited variant
-  const saveEditedVariant = () => {
+  const saveEditedVariant = async () => {
     if (!editingVariant) return;
     
     // Handle custom size/color
@@ -300,10 +358,45 @@ export const ProductForm = ({ initialData, onSubmit, onCancel, isEditing = false
       ? editingVariant.customColor
       : editingVariant.color;
     
+    // Upload images and videos if they are File objects
+    const uploadedImages = await Promise.all(editingVariant.images.map(async (image) => {
+      if (image instanceof File) {
+        try {
+          const response = await uploadApi.upload(image);
+          if (response.data && (response.data as unknown as UploadResponse).file) {
+            return (response.data as unknown as UploadResponse).file.path; // Return the file path
+          }
+          return ""; // Return empty string if upload failed
+        } catch (error) {
+          console.error("Image upload failed:", error);
+          return ""; // Return empty string if upload failed
+        }
+      }
+      return image; // Already a string URL
+    }));
+    
+    const uploadedVideos = await Promise.all(editingVariant.videos.map(async (video) => {
+      if (video instanceof File) {
+        try {
+          const response = await uploadApi.upload(video);
+          if (response.data && (response.data as unknown as UploadResponse).file) {
+            return (response.data as unknown as UploadResponse).file.path; // Return the file path
+          }
+          return ""; // Return empty string if upload failed
+        } catch (error) {
+          console.error("Video upload failed:", error);
+          return ""; // Return empty string if upload failed
+        }
+      }
+      return video; // Already a string URL
+    }));
+    
     const updatedVariant = {
       ...editingVariant,
       size: sizeValue || editingVariant.size,
-      color: colorValue || editingVariant.color
+      color: colorValue || editingVariant.color,
+      images: uploadedImages.filter(url => url !== ""), // Filter out failed uploads
+      videos: uploadedVideos.filter(url => url !== ""), // Filter out failed uploads
     };
     
     setFormData(prev => ({

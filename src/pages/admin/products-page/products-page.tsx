@@ -1,31 +1,37 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Eye, Edit, Plus, Image, Video } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Search, Eye, Edit, Plus, Image, Video, Loader2, AlertCircle } from "lucide-react"
 import { ProductForm } from "../../../components/admin/ProductForm"
+import { productApi } from "../../../utils/api"
 
 interface ProductVariant {
-  id: string
+  _id?: string
+  id?: string
   size: string
   color: string
-  images: (File | string)[]
-  videos: (File | string)[]
+  images: (string | File)[]
+  videos: (string | File)[]
   price: number
   stock: number
   styleNumber?: string
   fabric?: string
+  customSize?: string
+  customColor?: string
 }
 
 interface Product {
-  id: number
+  _id: string
   title: string
   description: string
   category: string
   subcategory?: string
   variants: ProductVariant[]
-  status: string
+  status: 'Active' | 'Inactive'
   styleNumber?: string
   fabric?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 // const sizes = [
@@ -53,82 +59,77 @@ interface Product {
 //   { id: "custom", name: "Custom Color" }
 // ]
 
-const mockProducts: Product[] = [
-  { 
-    id: 1, 
-    title: "Cotton Kurta", 
-    description: "Comfortable cotton kurta for daily wear",
-    category: "Clothing",
-    subcategory: "T-Shirts",
-    styleNumber: "CK-2023-001",
-    fabric: "100% Cotton",
-    variants: [
-      { id: "1-1", size: "M", color: "Blue", images: [], videos: [], price: 1299, stock: 45, styleNumber: "CK-2023-001-M-BLUE", fabric: "100% Cotton" },
-      { id: "1-2", size: "L", color: "White", images: [], videos: [], price: 1299, stock: 30, styleNumber: "CK-2023-001-L-WHITE", fabric: "100% Cotton" }
-    ],
-    status: "Active" 
-  },
-  { 
-    id: 2, 
-    title: "Running Sneakers", 
-    description: "Lightweight running shoes for athletes",
-    category: "Footwear",
-    subcategory: "Sneakers",
-    styleNumber: "RS-2023-002",
-    fabric: "Synthetic Leather",
-    variants: [
-      { id: "2-1", size: "9", color: "Black", images: [], videos: [], price: 2499, stock: 25, styleNumber: "RS-2023-002-9-BLACK", fabric: "Synthetic Leather" },
-      { id: "2-2", size: "10", color: "White", images: [], videos: [], price: 2499, stock: 20, styleNumber: "RS-2023-002-10-WHITE", fabric: "Synthetic Leather" }
-    ],
-    status: "Active" 
-  },
-  { 
-    id: 3, 
-    title: "Leather Handbag", 
-    description: "Premium leather handbag for women",
-    category: "Accessories",
-    subcategory: "Bags",
-    styleNumber: "LH-2023-003",
-    fabric: "Genuine Leather",
-    variants: [
-      { id: "3-1", size: "Free Size", color: "Brown", images: [], videos: [], price: 3999, stock: 15, styleNumber: "LH-2023-003-FS-BROWN", fabric: "Genuine Leather" }
-    ],
-    status: "Active" 
-  },
-]
-
 export default function ProductsPage() {
-  const [products, setProducts] = useState(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [showAddForm, setShowAddForm] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  
-  // Remove unused form state since it's now handled in the ProductForm component
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   // New state for filtering and sorting
   const [categoryFilter, setCategoryFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
   const [sortBy, setSortBy] = useState("name")
 
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const params: any = {}
+      if (categoryFilter) params.category = categoryFilter
+      if (statusFilter) params.status = statusFilter
+      if (searchTerm) params.search = searchTerm
+
+      const response = await productApi.getAll(params)
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        // Handle the response structure from backend
+        const productsData = (response.data as any).products || response.data
+        setProducts(Array.isArray(productsData) ? productsData : [])
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch products')
+    } finally {
+      setLoading(false)
+    }
+  }, [categoryFilter, statusFilter, searchTerm])
+
+  // Fetch products from API
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm || !searchTerm) {
+        fetchProducts();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [fetchProducts, searchTerm]);
+
   // Get unique categories for filter
   const categories: string[] = []
-  mockProducts.forEach(product => {
+  products.forEach(product => {
     if (!categories.includes(product.category)) {
       categories.push(product.category)
     }
   })
 
+  // Filter products locally (backend also filters, but we do client-side for search)
   const filteredProducts = products.filter(
     (product) => {
-      const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = searchTerm ? (
+        product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.subcategory && product.subcategory.toLowerCase().includes(searchTerm.toLowerCase()))
+      ) : true
       
-      const matchesCategory = categoryFilter ? product.category === categoryFilter : true
-      const matchesStatus = statusFilter ? product.status === statusFilter : true
-      
-      return matchesSearch && matchesCategory && matchesStatus
+      return matchesSearch
     }
   ).sort((a, b) => {
     if (sortBy === "name") return a.title.localeCompare(b.title)
@@ -137,12 +138,22 @@ export default function ProductsPage() {
     return 0
   })
 
-  const toggleProductStatus = (productId: number) => {
-    setProducts(prev => prev.map(product => 
-      product.id === productId 
-        ? { ...product, status: product.status === "Active" ? "Inactive" : "Active" } 
-        : product
-    ))
+  const toggleProductStatus = async (productId: string) => {
+    try {
+      const response = await productApi.toggleStatus(productId)
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        // Update the product in the list
+        setProducts(prev => prev.map(product => 
+          product._id === productId 
+            ? { ...product, status: (response.data as Product).status } 
+            : product
+        ))
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to update product status')
+    }
   }
 
   const handleEditProduct = (product: Product) => {
@@ -155,22 +166,35 @@ export default function ProductsPage() {
     setShowAddForm(true)
   }
 
-  const saveProduct = (product: Product) => {
-    if (editingProduct) {
-      // Update existing product
-      const updatedProducts = products.map(p => 
-        p.id === editingProduct.id ? product : p
-      )
-      setProducts(updatedProducts)
-    } else {
-      // Add new product
-      setProducts(prev => [...prev, product])
+  const saveProduct = async (product: any) => {
+    try {
+      setError(null)
+      let response
+      
+      if (editingProduct) {
+        // Update existing product
+        response = await productApi.update(editingProduct._id, product)
+      } else {
+        // Create new product
+        response = await productApi.create(product)
+      }
+      
+      if (response.error) {
+        setError(response.error)
+        return
+      }
+      
+      if (response.data) {
+        // Refresh products list
+        await fetchProducts()
+        // Reset forms
+        setEditingProduct(null)
+        setShowAddForm(false)
+        setShowEditForm(false)
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to save product')
     }
-    
-    // Reset forms
-    setEditingProduct(null)
-    setShowAddForm(false)
-    setShowEditForm(false)
   }
 
   const cancelForm = () => {
@@ -194,6 +218,22 @@ export default function ProductsPage() {
           Add Product
         </button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex items-center p-4 bg-red-100 text-red-800 rounded-lg">
+          <AlertCircle className="mr-2" size={20} />
+          {error}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="animate-spin" size={32} />
+          <span className="ml-2">Loading products...</span>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -224,7 +264,15 @@ export default function ProductsPage() {
       {(showAddForm || showEditForm) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <ProductForm
-            initialData={editingProduct || undefined}
+            initialData={editingProduct ? {
+              ...editingProduct,
+              id: editingProduct._id ? parseInt(editingProduct._id, 10) : Date.now(),
+              _id: editingProduct._id,
+              variants: editingProduct.variants.map(variant => ({
+                ...variant,
+                id: variant.id || variant._id || Date.now().toString()
+              }))
+            } : undefined}
             onSubmit={saveProduct}
             onCancel={cancelForm}
             isEditing={!!editingProduct}
@@ -242,6 +290,11 @@ export default function ProductsPage() {
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  fetchProducts()
+                }
+              }}
               className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -299,8 +352,8 @@ export default function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b border-border hover:bg-muted/50">
+              {!loading && filteredProducts.map((product) => (
+                <tr key={product._id} className="border-b border-border hover:bg-muted/50">
                   <td className="py-3 px-4">
                     <div>
                       <div className="font-medium text-foreground">{product.title}</div>
@@ -330,7 +383,7 @@ export default function ProductsPage() {
                   <td className="py-3 px-4">
                     <div className="space-y-2">
                       {product.variants.slice(0, 3).map((variant) => (
-                        <div key={variant.id} className="flex items-center gap-2 text-xs bg-gray-100 px-2 py-1 rounded">
+                        <div key={variant.id || variant._id} className="flex items-center gap-2 text-xs bg-gray-100 px-2 py-1 rounded">
                           <span className="font-medium px-2 py-1 bg-blue-100 text-blue-800 rounded">{variant.size}</span>
                           <span className="font-medium px-2 py-1 bg-purple-100 text-purple-800 rounded">{variant.color}</span>
                           <span className="text-green-600 font-medium">₹{variant.price}</span>
@@ -360,7 +413,7 @@ export default function ProductsPage() {
                   </td>
                   <td className="py-3 px-4">
                     <button 
-                      onClick={() => toggleProductStatus(product.id)}
+                      onClick={() => toggleProductStatus(product._id)}
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         product.status === "Active"
                           ? "bg-green-100 text-green-800 hover:bg-green-200"

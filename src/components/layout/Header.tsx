@@ -1,16 +1,23 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown } from "lucide-react";
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
 
   const categories = [
     { name: "One Piece", path: "/category/onepiece" },
     { name: "Crop Tops", path: "/category/croptop" },
     { name: "Casual Shirts", path: "/category/tshirt" },
   ];
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100 sticky top-0 z-50">
@@ -142,12 +149,21 @@ const Header: React.FC = () => {
                   2
                 </span>
               </Link>
-              <Link
-                to="/account"
-                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-xl transition-all duration-300 group hidden sm:block"
-              >
-                <User className="w-4 sm:w-5 h-4 sm:h-5 transition-colors" style={{color: 'var(--primary-dark)'}} />
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-xl transition-all duration-300 group hidden sm:block"
+                >
+                  <User className="w-4 sm:w-5 h-4 sm:h-5 transition-colors" style={{color: 'var(--primary-dark)'}} />
+                </button>
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-xl transition-all duration-300 group hidden sm:block"
+                >
+                  <User className="w-4 sm:w-5 h-4 sm:h-5 transition-colors" style={{color: 'var(--primary-dark)'}} />
+                </Link>
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -220,13 +236,24 @@ const Header: React.FC = () => {
             </Link>
 
             {/* Mobile Account Link */}
-            <Link
-              to="/account"
-              className="block text-gray-800 font-medium hover:text-gray-600 transition-all py-2 border-t border-gray-200 mt-3 pt-3 sm:hidden"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              My Account
-            </Link>
+            <div className="border-t border-gray-200 mt-3 pt-3 sm:hidden">
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left text-gray-800 font-medium hover:text-gray-600 transition-all py-2"
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  to="/auth/login"
+                  className="block text-gray-800 font-medium hover:text-gray-600 transition-all py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -1,17 +1,54 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getActiveCategories } from "../../data/categories";
 
-// sample categories
-const categories = [
-  { id: "tshirt", name: "Top Wear", image: "/images/top_wear.png" },
-  { id: "onepiece", name: "One Piece", image: "/images/onepiece.jpg" },
-  { id: "croptop", name: "Coord Set", image: "/images/coord_set.jpg" },
-  { id: "croptop", name: "Crop Tops", image: "/images/corp_top.jpg" },
-  { id: "tshirt", name: "Casual Shirts", image: "/images/casual_shirts.png" },
-  { id: "all", name: "New Arrivals", image: "/images/happy-byer.jpg" },
-];
+interface Category {
+  id: number;
+  name: string;
+  image: string;
+}
 
 const CategorySection: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      // Get active categories from backend
+      const backendCategories = await getActiveCategories();
+      
+      // Map to the format used in this component
+      const mappedCategories: Category[] = backendCategories.map((cat, index) => ({
+        id: cat.id,
+        name: cat.name,
+        // Use a default image path or implement a more sophisticated image handling
+        image: `/images/category_${index + 1}.jpg`
+      }));
+      
+      // Add the special "New Arrivals" category
+      const allCategories: Category[] = [
+        ...mappedCategories,
+        { id: 999, name: "New Arrivals", image: "/images/happy-byer.jpg" }
+      ];
+      
+      setCategories(allCategories);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      // Fallback to static categories if API fails
+      setCategories([
+        { id: 1, name: "Top Wear", image: "/images/top_wear.png" },
+        { id: 2, name: "One Piece", image: "/images/onepiece.jpg" },
+        { id: 3, name: "Coord Set", image: "/images/coord_set.jpg" },
+        { id: 4, name: "Crop Tops", image: "/images/corp_top.jpg" },
+        { id: 5, name: "Casual Shirts", image: "/images/casual_shirts.png" },
+        { id: 6, name: "New Arrivals", image: "/images/happy-byer.jpg" }
+      ]);
+    }
+  };
+
   return (
     <section className="py-6 sm:py-8 theme-gradient-light relative overflow-hidden">
       {/* Background decoration */}
@@ -27,40 +64,39 @@ const CategorySection: React.FC = () => {
             Shop by Category
           </h2>
           <p className="text-elegant text-sm sm:text-base">
-            Find your perfect style in our curated collections
+            Discover our curated collections
           </p>
         </div>
 
-        {/* Categories Scrollable Container */}
-        <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex space-x-4 sm:space-x-6 pb-4 sm:pb-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-3 lg:gap-4 max-w-4xl mx-auto min-w-max sm:min-w-0">
-            {categories.map((category, index) => (
-              <Link
-                key={category.id}
-                to={`/category/${category.id}`}
-                className="group flex flex-col items-center transition-all duration-300 hover:scale-105 focus:outline-none theme-fade-in flex-shrink-0"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="relative">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full overflow-hidden theme-shadow group-hover:shadow-xl transition-all duration-300 border-2 border-gray-200 hover:border-gray-400">
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  {/* Gradient overlay on hover */}
-                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-t from-black to-transparent"></div>
+        {/* Category Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
+          {categories.map((category) => (
+            <Link 
+              key={category.id} 
+              to={category.name === "New Arrivals" ? "/new-arrivals" : `/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+              className="group block"
+            >
+              <div className="aspect-square overflow-hidden rounded-lg shadow-md group-hover:shadow-lg transition-all duration-300 relative">
+                <img 
+                  src={category.image} 
+                  alt={category.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    // Fallback image if the image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/images/placeholder.jpg";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 text-center transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                  <h3 className="text-white text-xs sm:text-sm font-medium drop-shadow-lg">
+                    {category.name}
+                  </h3>
                 </div>
-                <span className="mt-2 text-xs sm:text-sm font-medium theme-text-primary text-center leading-tight transition-colors duration-300 px-1 max-w-[80px] text-gray-800">
-                  {category.name}
-                </span>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </Link>
+          ))}
         </div>
-
-
       </div>
     </section>
   );

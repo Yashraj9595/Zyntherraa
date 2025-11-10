@@ -1,39 +1,105 @@
 // src/components/ProductsCollection.tsx
-import React, { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { productApi } from '../../utils/api';
+import { getActiveCategories } from '../../data/categories';
 
-interface Product {
-  id: number;
-  category: string;
-  price: string;
-  img: string;
+interface ProductVariant {
+  _id?: string;
+  id?: string;
+  size: string;
+  color: string;
+  images: string[];
+  videos: string[];
+  price: number;
+  stock: number;
+  styleNumber?: string;
+  fabric?: string;
+  customSize?: string;
+  customColor?: string;
 }
 
-const products: Product[] = [
-  { id: 1, category: "onepiece", price: "₹1299", img: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=600&q=80" },
-  { id: 2, category: "tshirt",   price: "₹899",  img: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80" },
-  { id: 3, category: "croptop",  price: "₹799",  img: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=600&q=80" },
-  { id: 4, category: "onepiece", price: "₹1599", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80" },
-];
+interface Product {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  variants: ProductVariant[];
+  status: 'Active' | 'Inactive';
+  styleNumber?: string;
+  fabric?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  price?: number; // For backward compatibility
+}
 
-const categories = [
-  { label: "All", value: "all" },
-  { label: "One Piece", value: "onepiece" },
-  { label: "Crop Top", value: "croptop" },
-  { label: "T-Shirt", value: "tshirt" },
-];
+interface Category {
+  name: string;
+}
 
 const ProductsCollection: React.FC = () => {
   const navigate = useNavigate();
   const params = useParams<{ category?: string }>();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // derive active tab from URL param (fallback to 'all')
-  const activeTab = params.category ?? "all";
+  const activeTab = params.category ?? 'all';
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params: any = { status: 'Active' };
+      if (activeTab !== "all") {
+        params.category = activeTab;
+      }
+      
+      const response = await productApi.getAll(params);
+      if (response.error) {
+        setError(response.error);
+      } else if (response.data) {
+        const productsData = (response.data as any).products || response.data;
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch products');
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const backendCategories = await getActiveCategories();
+      // Convert to the format expected by this component
+      const formattedCategories = backendCategories.map(cat => ({ name: cat.name }));
+      setCategories(formattedCategories);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+      // Fallback to static categories
+      setCategories([
+        { name: "All" },
+        { name: "One Piece" },
+        { name: "Crop Top" },
+        { name: "T-Shirt" }
+      ]);
+    }
+  }, []);
+
+  // Fetch products from API
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [fetchProducts, fetchCategories]);
 
   // navigate to category route (URL change only)
   const handleCategoryClick = (category: string) => {
-    if (category === "all") {
-      // use replace: false so user can go back in history; set to true if you prefer replacing
-      navigate("/collections");
+    if (category === 'all') {
+      navigate('/collections');
     } else {
       navigate(`/category/${category}`);
     }
@@ -41,92 +107,136 @@ const ProductsCollection: React.FC = () => {
 
   // filter products based on activeTab (memoized)
   const filteredProducts = useMemo(() => {
-    return activeTab === "all"
-      ? products
-      : products.filter((p) => p.category === activeTab);
-  }, [activeTab]);
+    if (activeTab === 'all') {
+      return products;
+    }
+    return products.filter((p) =>
+      p.category.toLowerCase() === activeTab.toLowerCase() ||
+      (p.subcategory && p.subcategory.toLowerCase() === activeTab.toLowerCase())
+    );
+  }, [activeTab, products]);
 
-  const handleProductClick = (category: any) => {
-    // Example: keep user on same page but update url to category (optional)
-    navigate(`/category/${category}`);
+  const handleProductClick = (product: Product) => {
+    // Navigate to product detail page
+    navigate(`/product/${product._id}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleAddToCart = (product: Product) => {
     // Replace with your cart logic (context/redux/api)
     console.log("Add to cart:", product);
   };
-const selectProductClick = (productId: any) => {
-    navigate(`/product/${productId}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10 bottom-nav-safe">
-      <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-center mb-4 sm:mb-6">Our Collections</h2>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Sidebar with Categories */}
+        <div className="md:w-1/4">
+          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Categories</h2>
+            <ul className="space-y-2">
+              <li>
+                <button
+                  onClick={() => handleCategoryClick('all')}
+                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === 'all'
+                      ? 'bg-primary text-white'
+                      : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  All Products
+                </button>
+              </li>
+              {categories.map((category) => (
+                <li key={category.name}>
+                  <button
+                    onClick={() => handleCategoryClick(category.name.toLowerCase())}
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                      activeTab === category.name.toLowerCase()
+                        ? 'bg-primary text-white'
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex justify-center gap-2 sm:gap-4 mb-6 sm:mb-8 flex-wrap px-2">
-        {categories.map((cat) => {
-          const isActive = activeTab === cat.value;
-          return (
-            <button
-              key={cat.value}
-              onClick={() => handleCategoryClick(cat.value)}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border transition text-sm sm:text-base ${
-                isActive
-                  ? "bg-black text-white border-black"
-                  : "bg-white text-gray-800 border-gray-300 hover:bg-black hover:text-white"
-              }`}
-            >
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
+        {/* Main Content */}
+        <div className="md:w-3/4">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-800 capitalize">
+              {activeTab === 'all' ? 'All Products' : activeTab}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Showing {filteredProducts.length} products
+            </p>
+          </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-        {filteredProducts.map((product) => (
-          <div
-            key={product.id}
-            className="group relative cursor-pointer rounded-lg sm:rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition duration-300 bg-white"
-          >
-            <div
-              className="relative w-full h-48 sm:h-56 md:h-64 overflow-hidden"
-              onClick={() => handleProductClick(product.category)}
-            >
-              <img
-                src={product.img}
-                alt={product.category}
-                className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
-              />
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              {error}
+            </div>
+          )}
 
-              {/* Add to Cart Button */}
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No products found in this category.</p>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart(product);
-                  selectProductClick(product.id);
-                }}
-                className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 bg-black text-white py-1.5 sm:py-2 px-3 sm:px-4 rounded-lg opacity-0 group-hover:opacity-100 transition duration-300 text-xs sm:text-sm"
+                onClick={() => handleCategoryClick('all')}
+                className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
               >
-                Add to Cart
+                View All Products
               </button>
             </div>
-
-            {/* Price only */}
-            <div className="py-2 sm:py-3 text-center">
-              <p className="text-sm sm:text-lg font-semibold">{product.price}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product._id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleProductClick(product)}
+                >
+                  {product.variants[0]?.images[0] && (
+                    <img
+                      src={product.variants[0].images[0]}
+                      alt={product.title}
+                      className="w-full h-64 object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-800 truncate">
+                      {product.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {product.category}
+                      {product.subcategory && ` / ${product.subcategory}`}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-lg font-bold text-primary">
+                        ₹{product.variants[0]?.price || product.price}
+                      </span>
+                      <button className="px-3 py-1 bg-primary text-white text-sm rounded hover:bg-primary-dark transition-colors">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
-
-        {filteredProducts.length === 0 && (
-          <div className="col-span-full text-center py-12 sm:py-20 text-gray-500">
-            <p className="text-sm sm:text-base">No products found in this category.</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 /* Typography System - Modern Fashion Fonts */
 :root {
   /* Font Families */
-  --font-logo: 'Gafiya', 'Playfair Display', serif;          /* Gafiya for logo */
+  --font-logo: 'Playfair Display', 'Libre Baskerville', serif;          /* Elegant serif for logo */
   --font-heading: 'Cormorant Garamond', serif;     /* Sophisticated serif for headings */
   --font-body: 'Montserrat', sans-serif;           /* Clean, modern sans-serif for body */
   --font-accent: 'Crimson Text', serif;            /* Stylish serif for accents */
@@ -159,7 +159,7 @@
 }
 
 .logo-gafiya {
-  font-family: 'Gafiya', 'Playfair Display', serif;
+  font-family: var(--font-logo);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;

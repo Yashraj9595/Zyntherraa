@@ -7,9 +7,10 @@ exports.connectDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const connectDB = async () => {
+const connectDB = async (mongoUri) => {
     try {
-        const conn = await mongoose_1.default.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/zyntherraa', {});
+        const uri = mongoUri || process.env.MONGO_URI || 'mongodb://localhost:27017/zyntherraa';
+        const conn = await mongoose_1.default.connect(uri, {});
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     }
     catch (error) {

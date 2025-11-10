@@ -7,6 +7,9 @@ import { connectDB } from './config/db';
 // Load environment variables
 dotenv.config();
 
+// Use MongoDB connection string from environment or default to localhost
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zyntherraa';
+
 // Import routes
 import productRoutes from './routes/products';
 import categoryRoutes from './routes/categories';
@@ -18,7 +21,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
-connectDB();
+connectDB(MONGODB_URI);
 
 // Middleware
 app.use(cors());

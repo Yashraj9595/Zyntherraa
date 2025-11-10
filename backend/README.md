@@ -43,6 +43,15 @@ This is the backend API for the Zyntherraa e-commerce application, built with No
    UPLOAD_PATH=./uploads
    ```
 
+## Environment Variables
+
+- `NODE_ENV` - Node environment (development/production)
+- `PORT` - Server port (default: 5000)
+- `MONGO_URI` - MongoDB connection string
+- `JWT_SECRET` - Secret key for JWT token generation
+- `UPLOAD_PATH` - Path for file uploads (default: ./uploads)
+- `CORS_ORIGIN` - CORS origin (optional, for development)
+
 ## Available Scripts
 
 - `npm run dev` - Start development server with hot reloading

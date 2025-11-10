@@ -17,15 +17,28 @@ A modern React application built with TypeScript, Tailwind CSS, and PWA support.
 npm install
 ```
 
-2. Start the development server:
+2. Create a `.env` file based on `.env.example`:
+```bash
+cp .env.example .env
+```
+
+3. Start the development server:
 ```bash
 npm start
 ```
 
-3. Build for production:
+4. Build for production:
 ```bash
 npm run build
 ```
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+- `REACT_APP_API_URL` - The base URL for the backend API (default: http://localhost:5050/api)
+- `REACT_APP_NAME` - Application name
+- `REACT_APP_VERSION` - Application version
 
 ## PWA Features
 

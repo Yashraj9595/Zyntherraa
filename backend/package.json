@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "prestart": "npm run build",
     "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\"",
-    "build": "node build.js",
+    "build": "npx tsc",
     "postinstall": "npm install typescript ts-node",
     "test": "jest",
     "seed": "ts-node src/scripts/seed.ts"

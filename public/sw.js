@@ -1,89 +1,60 @@
-const CACHE_NAME = 'zyntherraa-app-v2';
-const STATIC_CACHE = 'zyntherraa-static-v2';
-const DYNAMIC_CACHE = 'zyntherraa-dynamic-v2';
+// Service Worker - CACHING DISABLED FOR DEVELOPMENT
+// All fetch requests pass through without caching
 
-const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/favicon.ico',
-  '/logo192.png',
-  '/logo512.png'
-];
+const CACHE_VERSION = new Date().getTime();
+const CACHE_NAME = `zyntherraa-app-v${CACHE_VERSION}`;
 
-// Install event - cache static assets
+// Install event - skip caching
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('Service Worker: Caching static assets');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Service Worker: Skip waiting');
-        return self.skipWaiting();
-      })
-  );
+  console.log('Service Worker: Installing (cache disabled)...');
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up any old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
+  console.log('Service Worker: Activating (cache disabled)...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-            console.log('Service Worker: Deleting old cache', cacheName);
-            return caches.delete(cacheName);
-          }
+          console.log('Service Worker: Deleting cache', cacheName);
+          return caches.delete(cacheName);
         })
       );
     }).then(() => {
-      console.log('Service Worker: Claiming clients');
+      console.log('Service Worker: All caches cleared');
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - NO CACHING, just pass through
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+  
+  // Skip caching for unsupported URL schemes (chrome-extension, etc.)
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Always fetch from network, no caching
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        return fetch(event.request)
-          .then((response) => {
-            // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            // Cache dynamic content
-            caches.open(DYNAMIC_CACHE)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
+    fetch(event.request).catch(() => {
+      // Return offline page for navigation requests if network fails
+      if (event.request.destination === 'document') {
+        return new Response('Offline - Please check your connection', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({
+            'Content-Type': 'text/plain'
           })
-          .catch(() => {
-            // Return offline page for navigation requests
-            if (event.request.destination === 'document') {
-              return caches.match('/');
-            }
-          });
-      })
+        });
+      }
+      throw new Error('Network request failed');
+    })
   );
 });
 
@@ -156,5 +127,21 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data && event.data.type === 'CLEAR_CACHE') {
+    // Clear all caches when requested
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          return caches.delete(cacheName);
+        })
+      );
+    }).then(() => {
+      // Notify main thread that cache is cleared
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'CACHE_CLEARED' });
+        });
+      });
+    });
   }
 });

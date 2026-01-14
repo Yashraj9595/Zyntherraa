@@ -51,6 +51,10 @@ const userSchema = new mongoose_1.Schema({
         required: true,
         minlength: 6
     },
+    phone: {
+        type: String,
+        trim: true
+    },
     role: {
         type: String,
         enum: ['customer', 'admin'],
@@ -59,9 +63,29 @@ const userSchema = new mongoose_1.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    otp: {
+        type: String
+    },
+    otpExpire: {
+        type: Date
+    },
+    resetPasswordToken: {
+        type: String
+    },
+    resetPasswordExpire: {
+        type: Date
     }
 }, {
     timestamps: true
 });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1, isVerified: 1 });
+userSchema.index({ createdAt: -1 });
 exports.default = mongoose_1.default.model('User', userSchema);
 //# sourceMappingURL=User.js.map

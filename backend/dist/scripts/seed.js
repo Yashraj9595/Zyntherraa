@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const Product_1 = __importDefault(require("../models/Product"));
 const Category_1 = __importDefault(require("../models/Category"));
 const User_1 = __importDefault(require("../models/User"));
@@ -25,41 +26,44 @@ const seedData = async () => {
         await Product_1.default.deleteMany({});
         await Category_1.default.deleteMany({});
         await User_1.default.deleteMany({});
-        const categories = [
-            {
-                name: "Clothing",
-                productCount: 0,
-                status: "Active",
-                subcategories: [
-                    { name: "T-Shirts", productCount: 0, status: "Active", parentId: null },
-                    { name: "Shirts", productCount: 0, status: "Active", parentId: null },
-                    { name: "Jeans", productCount: 0, status: "Active", parentId: null },
-                    { name: "Dresses", productCount: 0, status: "Active", parentId: null }
-                ]
-            },
-            {
-                name: "Footwear",
-                productCount: 0,
-                status: "Active",
-                subcategories: [
-                    { name: "Sneakers", productCount: 0, status: "Active", parentId: null },
-                    { name: "Boots", productCount: 0, status: "Active", parentId: null },
-                    { name: "Sandals", productCount: 0, status: "Active", parentId: null }
-                ]
-            },
-            {
-                name: "Accessories",
-                productCount: 0,
-                status: "Active",
-                subcategories: [
-                    { name: "Bags", productCount: 0, status: "Active", parentId: null },
-                    { name: "Watches", productCount: 0, status: "Active", parentId: null },
-                    { name: "Jewelry", productCount: 0, status: "Active", parentId: null }
-                ]
-            }
+        const clothingCategory = await Category_1.default.create({
+            name: "Clothing",
+            productCount: 0,
+            status: "Active",
+            subcategories: []
+        });
+        const footwearCategory = await Category_1.default.create({
+            name: "Footwear",
+            productCount: 0,
+            status: "Active",
+            subcategories: []
+        });
+        const accessoriesCategory = await Category_1.default.create({
+            name: "Accessories",
+            productCount: 0,
+            status: "Active",
+            subcategories: []
+        });
+        clothingCategory.subcategories = [
+            { name: "T-Shirts", productCount: 0, status: "Active", parentId: clothingCategory._id },
+            { name: "Shirts", productCount: 0, status: "Active", parentId: clothingCategory._id },
+            { name: "Jeans", productCount: 0, status: "Active", parentId: clothingCategory._id },
+            { name: "Dresses", productCount: 0, status: "Active", parentId: clothingCategory._id }
         ];
-        const createdCategories = await Category_1.default.insertMany(categories);
-        console.log('Categories inserted');
+        await clothingCategory.save();
+        footwearCategory.subcategories = [
+            { name: "Sneakers", productCount: 0, status: "Active", parentId: footwearCategory._id },
+            { name: "Boots", productCount: 0, status: "Active", parentId: footwearCategory._id },
+            { name: "Sandals", productCount: 0, status: "Active", parentId: footwearCategory._id }
+        ];
+        await footwearCategory.save();
+        accessoriesCategory.subcategories = [
+            { name: "Bags", productCount: 0, status: "Active", parentId: accessoriesCategory._id },
+            { name: "Watches", productCount: 0, status: "Active", parentId: accessoriesCategory._id },
+            { name: "Jewelry", productCount: 0, status: "Active", parentId: accessoriesCategory._id }
+        ];
+        await accessoriesCategory.save();
+        console.log('Categories and subcategories inserted');
         const products = [
             {
                 title: "Cotton T-Shirt",
@@ -72,7 +76,7 @@ const seedData = async () => {
                     {
                         size: "M",
                         color: "Blue",
-                        images: [],
+                        images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'],
                         videos: [],
                         price: 1299,
                         stock: 45,
@@ -82,7 +86,7 @@ const seedData = async () => {
                     {
                         size: "L",
                         color: "White",
-                        images: [],
+                        images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400'],
                         videos: [],
                         price: 1299,
                         stock: 30,
@@ -103,7 +107,7 @@ const seedData = async () => {
                     {
                         size: "9",
                         color: "Black",
-                        images: [],
+                        images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'],
                         videos: [],
                         price: 2499,
                         stock: 25,
@@ -113,7 +117,7 @@ const seedData = async () => {
                     {
                         size: "10",
                         color: "White",
-                        images: [],
+                        images: ['https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400'],
                         videos: [],
                         price: 2499,
                         stock: 20,
@@ -126,12 +130,15 @@ const seedData = async () => {
         ];
         await Product_1.default.insertMany(products);
         console.log('Products inserted');
+        const salt = await bcryptjs_1.default.genSalt(10);
+        const hashedPassword = await bcryptjs_1.default.hash("admin123", salt);
         const adminUser = new User_1.default({
             name: "Admin User",
             email: "admin@zyntherraa.com",
-            password: "admin123",
+            password: hashedPassword,
             role: "admin",
-            isActive: true
+            isActive: true,
+            isVerified: true
         });
         await adminUser.save();
         console.log('Admin user created');

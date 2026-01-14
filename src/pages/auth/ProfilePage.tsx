@@ -19,10 +19,8 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await userApi.getProfile();
-        if (response.data) {
-          setProfile(response.data as ProfileData);
-        }
+        const response = await userApi.getProfile() as ProfileData;
+        setProfile(response);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch profile');
       } finally {

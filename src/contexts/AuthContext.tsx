@@ -40,14 +40,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('token', token);
       
       // Get user profile
-      const response = await userApi.getProfile();
+      const response = await userApi.getProfile() as any;
       
-      if (response.data) {
+      if (response) {
         setUser({
-          _id: (response.data as any)._id,
-          name: (response.data as any).name,
-          email: (response.data as any).email,
-          role: (response.data as any).role,
+          _id: response._id,
+          name: response.name,
+          email: response.email,
+          role: response.role,
           token
         });
       } else {

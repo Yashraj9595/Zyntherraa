@@ -9,6 +9,7 @@ export interface ICategory extends Document {
     name: string;
     productCount: number;
     status: 'Active' | 'Inactive';
+    image?: string;
     subcategories: ISubcategory[];
     createdAt: Date;
     updatedAt: Date;

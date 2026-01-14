@@ -98,5 +98,11 @@ const productSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
+productSchema.index({ category: 1, status: 1 });
+productSchema.index({ subcategory: 1, status: 1 });
+productSchema.index({ status: 1, createdAt: -1 });
+productSchema.index({ title: 'text', description: 'text' });
+productSchema.index({ 'variants.price': 1 });
+productSchema.index({ 'variants.stock': 1 });
 exports.default = mongoose_1.default.model('Product', productSchema);
 //# sourceMappingURL=Product.js.map

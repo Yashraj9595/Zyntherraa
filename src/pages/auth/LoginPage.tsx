@@ -18,26 +18,23 @@ const LoginPage: React.FC = () => {
     setError('');
     
     try {
-      const response = await userApi.login({ email, password });
+      const response = await userApi.login(email, password) as any;
       
-      if (response.error) {
-        setError(response.error);
-        return;
-      }
-      
-      if (response.data) {
+      if (response.token) {
         // Save token to localStorage
-        localStorage.setItem('token', (response.data as any).token);
+        localStorage.setItem('token', response.token);
         
         // Update auth context
-        login(response.data);
+        login(response);
         
         // Redirect based on role
-        if ((response.data as any).role === 'admin') {
+        if (response.role === 'admin') {
           navigate('/admin');
         } else {
           navigate('/');
         }
+      } else {
+        setError('Invalid response from server');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to login');

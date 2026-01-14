@@ -71,9 +71,16 @@ const categorySchema = new mongoose_1.Schema({
         enum: ['Active', 'Inactive'],
         default: 'Active'
     },
+    image: {
+        type: String,
+        trim: true
+    },
     subcategories: [subcategorySchema]
 }, {
     timestamps: true
 });
+categorySchema.index({ name: 1 }, { unique: true });
+categorySchema.index({ status: 1 });
+categorySchema.index({ status: 1, createdAt: -1 });
 exports.default = mongoose_1.default.model('Category', categorySchema);
 //# sourceMappingURL=Category.js.map

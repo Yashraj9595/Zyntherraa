@@ -177,3 +177,38 @@ export const categoryApi = {
     })
   }
 }
+
+// User API
+export const userApi = {
+  login: async (email: string, password: string) => {
+    return apiFetch('/api/users/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    })
+  },
+  
+  register: async (userData: any) => {
+    return apiFetch('/api/users/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    })
+  },
+  
+  getProfile: async () => {
+    return apiFetch('/api/users/profile')
+  },
+  
+  updateProfile: async (userData: any) => {
+    return apiFetch('/api/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(userData)
+    })
+  },
+  
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    return apiFetch('/api/users/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ oldPassword, newPassword })
+    })
+  }
+}

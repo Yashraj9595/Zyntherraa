@@ -81,6 +81,18 @@ const orderSchema = new mongoose_1.Schema({
         updateTime: String,
         emailAddress: String
     },
+    refund: {
+        id: String,
+        amount: Number,
+        status: String,
+        createdAt: Date,
+        processedAt: Date,
+        notes: mongoose_1.Schema.Types.Mixed
+    },
+    paymentAttempts: {
+        type: Number,
+        default: 0
+    },
     itemsPrice: {
         type: Number,
         required: true,
@@ -116,9 +128,63 @@ const orderSchema = new mongoose_1.Schema({
     },
     deliveredAt: {
         type: Date
+    },
+    status: {
+        type: String,
+        enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled', 'Refunded'],
+        default: 'Pending'
+    },
+    trackingNumber: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    trackingHistory: [{
+            status: {
+                type: String,
+                required: true
+            },
+            location: String,
+            timestamp: {
+                type: Date,
+                default: Date.now
+            },
+            description: String
+        }],
+    carrier: {
+        type: String,
+        default: 'Standard Shipping'
+    },
+    estimatedDelivery: {
+        type: Date
     }
 }, {
     timestamps: true
 });
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ trackingNumber: 1 }, { unique: true, sparse: true });
+orderSchema.index({ isPaid: 1, isDelivered: 1 });
+orderSchema.index({ 'items.product': 1 });
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ user: 1, status: 1, createdAt: -1 });
+orderSchema.methods.generateTrackingNumber = function () {
+    const prefix = 'ZYN';
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `${prefix}${timestamp}${random}`;
+};
+orderSchema.methods.addTrackingHistory = function (status, location, description) {
+    if (!this.trackingHistory) {
+        this.trackingHistory = [];
+    }
+    this.trackingHistory.push({
+        status,
+        location,
+        timestamp: new Date(),
+        description
+    });
+    return this.save();
+};
 exports.default = mongoose_1.default.model('Order', orderSchema);
 //# sourceMappingURL=Order.js.map

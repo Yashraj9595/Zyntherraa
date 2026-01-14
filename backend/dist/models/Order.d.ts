@@ -25,6 +25,15 @@ export interface IOrder extends Document {
         updateTime: string;
         emailAddress: string;
     };
+    refund?: {
+        id: string;
+        amount: number;
+        status: string;
+        createdAt: Date;
+        processedAt?: Date;
+        notes?: Record<string, any>;
+    };
+    paymentAttempts?: number;
     itemsPrice: number;
     taxPrice: number;
     shippingPrice: number;
@@ -33,6 +42,16 @@ export interface IOrder extends Document {
     paidAt?: Date;
     isDelivered: boolean;
     deliveredAt?: Date;
+    status?: string;
+    trackingNumber?: string;
+    trackingHistory?: Array<{
+        status: string;
+        location?: string;
+        timestamp: Date;
+        description?: string;
+    }>;
+    carrier?: string;
+    estimatedDelivery?: Date;
     createdAt: Date;
     updatedAt: Date;
 }

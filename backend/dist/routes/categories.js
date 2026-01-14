@@ -7,9 +7,15 @@ const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const Category_1 = __importDefault(require("../models/Category"));
 const auth_1 = require("../middleware/auth");
+const validation_1 = require("../middleware/validation");
+const validationSchemas_1 = require("../utils/validationSchemas");
+const sanitize_1 = require("../utils/sanitize");
 router.get('/', async (req, res) => {
     try {
-        const categories = await Category_1.default.find({}).sort({ name: 1 });
+        const categories = await Category_1.default.find({})
+            .select('name productCount status image subcategories createdAt updatedAt')
+            .sort({ name: 1 })
+            .lean();
         res.json(categories);
     }
     catch (error) {
@@ -28,9 +34,10 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
-router.post('/', auth_1.protect, auth_1.admin, async (req, res) => {
+router.post('/', auth_1.protect, auth_1.admin, (0, validation_1.validate)(validationSchemas_1.categorySchemas.create), async (req, res) => {
     try {
-        const category = new Category_1.default(req.body);
+        const categoryData = (0, sanitize_1.sanitizeObject)(req.body);
+        const category = new Category_1.default(categoryData);
         const savedCategory = await category.save();
         res.status(201).json(savedCategory);
     }
@@ -38,9 +45,10 @@ router.post('/', auth_1.protect, auth_1.admin, async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
-router.put('/:id', auth_1.protect, auth_1.admin, async (req, res) => {
+router.put('/:id', auth_1.protect, auth_1.admin, (0, validation_1.validateParams)(validationSchemas_1.paramSchemas.id), (0, validation_1.validate)(validationSchemas_1.categorySchemas.update), async (req, res) => {
     try {
-        const category = await Category_1.default.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const updateData = (0, sanitize_1.sanitizeObject)(req.body);
+        const category = await Category_1.default.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
@@ -68,12 +76,28 @@ router.post('/:id/subcategories', auth_1.protect, auth_1.admin, async (req, res)
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
-        category.subcategories.push(req.body);
-        await category.save();
-        res.status(201).json(category);
+        if (!req.body.name || !req.body.name.trim()) {
+            return res.status(400).json({ message: 'Subcategory name is required' });
+        }
+        const subcategoryData = {
+            name: req.body.name.trim(),
+            status: req.body.status || 'Active',
+            productCount: req.body.productCount || 0,
+            parentId: category._id
+        };
+        if (!['Active', 'Inactive'].includes(subcategoryData.status)) {
+            subcategoryData.status = 'Active';
+        }
+        category.subcategories.push(subcategoryData);
+        const savedCategory = await category.save();
+        res.status(201).json(savedCategory);
     }
     catch (error) {
-        res.status(400).json({ message: error.message });
+        console.error('Error adding subcategory:', error);
+        const errorMessage = error.errors
+            ? Object.values(error.errors).map((e) => e.message).join(', ')
+            : error.message || 'Failed to add subcategory';
+        res.status(400).json({ message: errorMessage });
     }
 });
 router.put('/:id/subcategories/:subId', auth_1.protect, auth_1.admin, async (req, res) => {

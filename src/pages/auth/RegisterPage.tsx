@@ -32,22 +32,14 @@ const RegisterPage: React.FC = () => {
     setError('');
     
     try {
-      const response = await userApi.register({ name, email, password });
+      const response = await userApi.register({ name, email, password }) as any;
       
-      if (response.error) {
-        setError(response.error);
-        return;
-      }
-      
-      if (response.data) {
-        // Save token to localStorage
-        localStorage.setItem('token', (response.data as any).token);
-        
-        // Update auth context
-        login(response.data);
-        
-        // Redirect to home page
-        navigate('/');
+      // Backend returns { message, userId, email, otp? }
+      // For now, show success message and redirect to login
+      // TODO: Implement OTP verification flow
+      if (response.message) {
+        alert(response.message + ' Please login to continue.');
+        navigate('/auth/login');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to register');

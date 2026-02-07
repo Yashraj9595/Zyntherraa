@@ -15,28 +15,37 @@ RUN npm run build
 # Stage 2: Build backend
 FROM node:22-alpine AS backend-build
 WORKDIR /app
+
+# Copy package files and install ALL dependencies (including devDependencies for TypeScript)
 COPY backend/package*.json ./
 COPY backend/tsconfig.json ./
+RUN npm ci
+
+# Copy source files
 COPY backend/src ./src
-RUN npm ci --only=production
+
+# Compile TypeScript to JavaScript
+RUN npm run build
+
+# Verify dist/ directory exists
+RUN ls -la dist/ || (echo "ERROR: dist/ directory not found after build" && exit 1)
 
 # Stage 3: Production image
 FROM node:22-alpine
 WORKDIR /app
 
-# Copy backend build
-COPY --from=backend-build /app/node_modules ./node_modules
-COPY --from=backend-build /app/src ./src
-COPY --from=backend-build /app/tsconfig.json ./tsconfig.json
+# Install only production dependencies
+COPY backend/package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy compiled backend (dist/) instead of src/
+COPY --from=backend-build /app/dist ./dist
 
 # Copy frontend build
 COPY --from=frontend-build /app/build ./build
 
-# Copy backend package files
-COPY backend/package*.json ./
-
 # Create uploads directory
-RUN mkdir -p uploads
+RUN mkdir -p uploads/images uploads/videos
 
 # Expose port
 EXPOSE 5000

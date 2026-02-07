@@ -70,11 +70,14 @@ export default function CategoriesPage() {
     try {
       setLoading(true)
       setError(null)
-      const categories = await categoryApi.getAll()
-      // Backend returns array directly
-      const categoriesData = Array.isArray(categories) ? categories : []
-      // Add expanded property for UI
-      setCategories(categoriesData.map((cat: BackendCategory) => ({ ...cat, expanded: false })))
+      const response = await categoryApi.getAll()
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        const categoriesData = Array.isArray(response.data) ? response.data : []
+        // Add expanded property for UI
+        setCategories(categoriesData.map((cat: BackendCategory) => ({ ...cat, expanded: false })))
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch categories')
     } finally {
@@ -202,26 +205,41 @@ export default function CategoriesPage() {
       if (formMode === "add") {
         if (formData.parentId) {
           // Adding subcategory
-          await categoryApi.addSubcategory(formData.parentId, {
+          const response = await categoryApi.addSubcategory(formData.parentId, {
             name: formData.name.trim(),
             status: formData.status,
             productCount: 0
           })
+          if (response.error) {
+            setError(response.error || 'Failed to add subcategory')
+            console.error('Subcategory creation error:', response.error)
+            return
+          }
           setSuccess("Subcategory added successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setFormData({ name: "", status: "Active", parentId: null })
         } else {
           // Adding main category
-          await categoryApi.create({
+          const response = await categoryApi.create({
             name: formData.name.trim(),
             status: formData.status,
             productCount: 0,
             subcategories: []
           })
+          if (response.error) {
+            setError(response.error)
+            return
+          }
           setSuccess("Category added successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setFormData({ name: "", status: "Active", parentId: null })
         }
       } else if (formMode === "edit" && selectedItem) {
         if ('parentId' in selectedItem) {
           // Editing subcategory
-          await categoryApi.updateSubcategory(
+          const response = await categoryApi.updateSubcategory(
             selectedItem.parentId,
             selectedItem._id,
             {
@@ -229,27 +247,57 @@ export default function CategoriesPage() {
               status: formData.status
             }
           )
+          if (response.error) {
+            setError(response.error)
+            return
+          }
           setSuccess("Subcategory updated successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setFormData({ name: "", status: "Active", parentId: null })
+          setSelectedItem(null)
         } else {
           // Editing main category
-          await categoryApi.update(selectedItem._id, {
+          const response = await categoryApi.update(selectedItem._id, {
             name: formData.name.trim(),
             status: formData.status
           })
+          if (response.error) {
+            setError(response.error)
+            return
+          }
           setSuccess("Category updated successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setFormData({ name: "", status: "Active", parentId: null })
+          setSelectedItem(null)
         }
       } else if (formMode === "delete" && selectedItem) {
         if ('parentId' in selectedItem) {
           // Deleting subcategory
-          await categoryApi.deleteSubcategory(
+          const response = await categoryApi.deleteSubcategory(
             selectedItem.parentId,
             selectedItem._id
           )
+          if (response.error) {
+            setError(response.error)
+            return
+          }
           setSuccess("Subcategory deleted successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setSelectedItem(null)
         } else {
           // Deleting main category
-          await categoryApi.delete(selectedItem._id)
+          const response = await categoryApi.delete(selectedItem._id)
+          if (response.error) {
+            setError(response.error)
+            return
+          }
           setSuccess("Category deleted successfully!")
+          await fetchCategories() // Refresh the list
+          setIsDialogOpen(false)
+          setSelectedItem(null)
         }
       }
 

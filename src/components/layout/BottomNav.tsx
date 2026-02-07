@@ -1,9 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, Heart, ShoppingBag, User } from 'lucide-react';
+import { useCart } from '../../contexts/CartContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
+  const { getCartItemCount } = useCart();
+  const { getWishlistCount } = useWishlist();
+  const cartCount = getCartItemCount();
+  const wishlistCount = getWishlistCount();
 
   const navItems = [
     { 
@@ -23,14 +29,14 @@ const BottomNav: React.FC = () => {
       icon: Heart, 
       label: 'Wishlist',
       activeColor: 'theme-text-secondary',
-      badge: 3
+      badge: wishlistCount
     },
     { 
       path: '/cart', 
       icon: ShoppingBag, 
       label: 'Cart',
       activeColor: 'theme-text-secondary',
-      badge: 2
+      badge: cartCount
     },
     { 
       path: '/account', 
@@ -41,7 +47,7 @@ const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50 safe-area-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50 safe-area-bottom bottom-nav-bar">
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -66,11 +72,11 @@ const BottomNav: React.FC = () => {
                 />
                 
                 {/* Badge */}
-                {item.badge && (
-                  <span className={`badge-theme absolute -top-2 -right-2 w-4 h-4 text-xs font-bold rounded-full flex items-center justify-center ${
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className={`badge-theme absolute -top-2 -right-2 min-w-[16px] h-4 px-1 text-xs font-bold rounded-full flex items-center justify-center ${
                     isActive ? 'theme-pulse' : ''
                   }`}>
-                    {item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </div>

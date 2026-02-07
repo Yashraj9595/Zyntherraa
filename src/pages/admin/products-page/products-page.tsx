@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Search, Edit, Plus, Image, Video, Loader2, AlertCircle, Trash2 } from "lucide-react"
+import { Search, Eye, Edit, Plus, Image, Video, Loader2, AlertCircle, Trash2 } from "lucide-react"
 import { ProductForm } from "../../../components/admin/ProductForm"
-import { productApi, uploadSingleFile } from "../../../utils/api"
+import { productApi } from "../../../utils/api"
 
 interface ProductVariant {
   _id?: string
@@ -32,17 +32,6 @@ interface Product {
   fabric?: string
   createdAt?: string
   updatedAt?: string
-}
-
-interface ProductsResponse {
-  products: Product[]
-  totalPages?: number
-  currentPage?: number
-  totalProducts?: number
-}
-
-interface ProductStatusResponse {
-  status: 'Active' | 'Inactive'
 }
 
 // const sizes = [
@@ -78,7 +67,6 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
   
   // New state for filtering and sorting
   const [categoryFilter, setCategoryFilter] = useState("")
@@ -94,10 +82,14 @@ export default function ProductsPage() {
       if (statusFilter) params.status = statusFilter
       if (searchTerm) params.search = searchTerm
 
-      const response = await productApi.getAll(params) as ProductsResponse
-      // Backend returns { products, totalPages, currentPage, totalProducts, ... }
-      const productsData = response.products || []
-      setProducts(Array.isArray(productsData) ? productsData : [])
+      const response = await productApi.getAll(params)
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        // Handle the response structure from backend
+        const productsData = (response.data as any).products || response.data
+        setProducts(Array.isArray(productsData) ? productsData : [])
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch products')
     } finally {
@@ -148,13 +140,17 @@ export default function ProductsPage() {
 
   const toggleProductStatus = async (productId: string) => {
     try {
-      const updatedProduct = await productApi.toggleStatus(productId) as ProductStatusResponse
-      // Update the product in the list
-      setProducts(prev => prev.map(product => 
-        product._id === productId 
-          ? { ...product, status: updatedProduct.status } 
-          : product
-      ))
+      const response = await productApi.toggleStatus(productId)
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        // Update the product in the list
+        setProducts(prev => prev.map(product => 
+          product._id === productId 
+            ? { ...product, status: (response.data as Product).status } 
+            : product
+        ))
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to update product status')
     }
@@ -178,9 +174,14 @@ export default function ProductsPage() {
 
     try {
       setError(null);
-      await productApi.delete(productId);
-      // Remove the product from the list
-      setProducts(prev => prev.filter(product => product._id !== productId));
+      const response = await productApi.delete(productId);
+      
+      if (response.error) {
+        setError(response.error);
+      } else {
+        // Remove the product from the list
+        setProducts(prev => prev.filter(product => product._id !== productId));
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to delete product');
     }
@@ -189,7 +190,6 @@ export default function ProductsPage() {
   const saveProduct = async (product: any) => {
     try {
       setError(null)
-      setSaving(true)
       
       // Clean up product data before sending
       const cleanedProduct: any = {
@@ -216,58 +216,21 @@ export default function ProductsPage() {
         return;
       }
       
-      // Upload files and process variants
-      cleanedProduct.variants = await Promise.all(product.variants.map(async (variant: any) => {
+      cleanedProduct.variants = product.variants.map((variant: any) => {
         // Validate required fields
         if (!variant.size || !variant.color) {
           throw new Error('Each variant must have size and color');
         }
         
-        // Upload images
-        const uploadedImages: string[] = [];
-        if (Array.isArray(variant.images)) {
-          for (const img of variant.images) {
-            if (img instanceof File) {
-              try {
-                const path = await uploadSingleFile(img)
-                uploadedImages.push(path)
-              } catch (uploadErr) {
-                console.error('Error uploading image:', uploadErr);
-                setError(`Error uploading image: ${uploadErr}`);
-              }
-            } else if (typeof img === 'string' && img.trim() !== '') {
-              // Already uploaded, keep the URL
-              console.log('Keeping existing image URL:', img);
-              uploadedImages.push(img);
-            }
-          }
-        }
-        
-        console.log('Total uploaded images for variant:', uploadedImages);
-        
-        // Upload videos
-        const uploadedVideos: string[] = [];
-        if (Array.isArray(variant.videos)) {
-          for (const vid of variant.videos) {
-            if (vid instanceof File) {
-              try {
-                const path = await uploadSingleFile(vid)
-                uploadedVideos.push(path)
-              } catch (uploadErr) {
-                console.error('Error uploading video:', uploadErr);
-              }
-            } else if (typeof vid === 'string' && vid.trim() !== '') {
-              // Already uploaded, keep the URL
-              uploadedVideos.push(vid);
-            }
-          }
-        }
-        
         const cleanedVariant: any = {
           size: variant.size.trim(),
           color: variant.color.trim(),
-          images: uploadedImages,
-          videos: uploadedVideos,
+          images: Array.isArray(variant.images) 
+            ? variant.images.filter((img: any) => img && typeof img === 'string' && img.trim() !== '')
+            : [],
+          videos: Array.isArray(variant.videos)
+            ? variant.videos.filter((vid: any) => vid && typeof vid === 'string' && vid.trim() !== '')
+            : [],
           price: Number(variant.price) || 0,
           stock: Number(variant.stock) || 0,
         };
@@ -281,30 +244,36 @@ export default function ProductsPage() {
         }
         
         return cleanedVariant;
-      }));
+      });
       
-      console.log('Final cleaned product data:', JSON.stringify(cleanedProduct, null, 2));
+      let response
       
       if (editingProduct) {
         // Update existing product
-        await productApi.update(editingProduct._id, cleanedProduct)
+        response = await productApi.update(editingProduct._id, cleanedProduct)
       } else {
         // Create new product
-        await productApi.create(cleanedProduct)
+        response = await productApi.create(cleanedProduct)
       }
       
-      // Refresh products list
-      await fetchProducts()
-      // Reset forms
-      setEditingProduct(null)
-      setShowAddForm(false)
-      setShowEditForm(false)
+      if (response.error) {
+        setError(response.error || 'Failed to save product')
+        console.error('Product save error:', response.error)
+        return
+      }
+      
+      if (response.data) {
+        // Refresh products list
+        await fetchProducts()
+        // Reset forms
+        setEditingProduct(null)
+        setShowAddForm(false)
+        setShowEditForm(false)
+      }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to save product'
       setError(errorMessage)
       console.error('Product save exception:', err)
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -374,18 +343,11 @@ export default function ProductsPage() {
 
       {(showAddForm || showEditForm) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          {saving && (
-            <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 flex flex-col items-center">
-                <Loader2 className="animate-spin mb-4" size={48} />
-                <p className="text-lg font-semibold">Uploading images and saving product...</p>
-              </div>
-            </div>
-          )}
           <ProductForm
             initialData={editingProduct ? {
               ...editingProduct,
               id: editingProduct._id ? parseInt(editingProduct._id, 10) : Date.now(),
+              _id: editingProduct._id,
               variants: editingProduct.variants.map(variant => ({
                 ...variant,
                 id: variant.id || variant._id || Date.now().toString()

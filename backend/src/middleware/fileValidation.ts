@@ -108,8 +108,6 @@ export const validateUploadedFile = (
       }
 
       // Validate file content (magic bytes) - security check
-      // DISABLED FOR DEVELOPMENT - Can cause issues with valid files
-      /*
       try {
         const isValidContent = await validateUploadedFileContent(file, file.mimetype);
         if (!isValidContent) {
@@ -128,7 +126,6 @@ export const validateUploadedFile = (
           });
         }
       }
-      */
     }
 
     next();

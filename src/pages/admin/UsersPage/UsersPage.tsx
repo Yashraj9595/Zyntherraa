@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "../../../components/ui/card"
 import { Button } from "../../../components/ui/button"
-import {
+import { 
   Plus, 
   Edit2, 
   Trash2, 
@@ -23,187 +23,98 @@ import {
   Shield,
   Crown
 } from "lucide-react"
-import { fetchUsers, type BackendUser } from "../../../utils/usersApi"
+import { userApi, orderApi } from "../../../utils/api"
 
 interface UserData {
-  id: number
+  _id: string
+  id?: number
   name: string
   email: string
-  phone: string
-  address: string
-  role: "Customer" | "Admin" | "Manager" | "Support"
-  joinDate: string
-  lastLogin: string
+  phone?: string
+  address?: string
+  role: "customer" | "admin" | "Customer" | "Admin" | "Manager" | "Support"
+  joinDate?: string
+  createdAt?: string
+  lastLogin?: string
   status: "Active" | "Inactive" | "Suspended" | "Pending"
-  avatar: string
-  totalOrders: number
-  totalSpent: number
-  country: string
-  city: string
-  verified: boolean
-  newsletter: boolean
+  isActive?: boolean
+  avatar?: string
+  totalOrders?: number
+  totalSpent?: number
+  country?: string
+  city?: string
+  verified?: boolean
+  newsletter?: boolean
 }
 
-const mockUsers: UserData[] = [
-  {
-    id: 1,
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@example.com",
-    phone: "+91 98765 43210",
-    address: "123 MG Road, Bangalore",
-    role: "Customer",
-    joinDate: "2024-01-01",
-    lastLogin: "2024-01-20",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 15,
-    totalSpent: 45000,
-    country: "India",
-    city: "Bangalore",
-    verified: true,
-    newsletter: true
-  },
-  {
-    id: 2,
-    name: "Priya Sharma",
-    email: "priya.sharma@example.com",
-    phone: "+91 87654 32109",
-    address: "456 CP, New Delhi",
-    role: "Customer",
-    joinDate: "2024-01-05",
-    lastLogin: "2024-01-19",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 8,
-    totalSpent: 23500,
-    country: "India",
-    city: "New Delhi",
-    verified: true,
-    newsletter: false
-  },
-  {
-    id: 3,
-    name: "Amit Patel",
-    email: "amit.patel@example.com",
-    phone: "+91 76543 21098",
-    address: "789 SG Highway, Ahmedabad",
-    role: "Admin",
-    joinDate: "2023-12-15",
-    lastLogin: "2024-01-21",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 0,
-    totalSpent: 0,
-    country: "India",
-    city: "Ahmedabad",
-    verified: true,
-    newsletter: true
-  },
-  {
-    id: 4,
-    name: "Sneha Reddy",
-    email: "sneha.reddy@example.com",
-    phone: "+91 65432 10987",
-    address: "321 Banjara Hills, Hyderabad",
-    role: "Manager",
-    joinDate: "2024-01-10",
-    lastLogin: "2024-01-18",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 3,
-    totalSpent: 12000,
-    country: "India",
-    city: "Hyderabad",
-    verified: true,
-    newsletter: true
-  },
-  {
-    id: 5,
-    name: "Vikram Singh",
-    email: "vikram.singh@example.com",
-    phone: "+91 54321 09876",
-    address: "654 Park Street, Kolkata",
-    role: "Customer",
-    joinDate: "2024-01-12",
-    lastLogin: "2024-01-15",
-    status: "Inactive",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 2,
-    totalSpent: 5600,
-    country: "India",
-    city: "Kolkata",
-    verified: false,
-    newsletter: false
-  },
-  {
-    id: 6,
-    name: "Anita Gupta",
-    email: "anita.gupta@example.com",
-    phone: "+91 43210 98765",
-    address: "987 Marine Drive, Mumbai",
-    role: "Support",
-    joinDate: "2024-01-08",
-    lastLogin: "2024-01-20",
-    status: "Active",
-    avatar: "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 1,
-    totalSpent: 2800,
-    country: "India",
-    city: "Mumbai",
-    verified: true,
-    newsletter: true
-  },
-  {
-    id: 7,
-    name: "Rohit Mehta",
-    email: "rohit.mehta@example.com",
-    phone: "+91 32109 87654",
-    address: "147 Sector 17, Chandigarh",
-    role: "Customer",
-    joinDate: "2024-01-14",
-    lastLogin: "Never",
-    status: "Pending",
-    avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 0,
-    totalSpent: 0,
-    country: "India",
-    city: "Chandigarh",
-    verified: false,
-    newsletter: false
-  },
-  {
-    id: 8,
-    name: "Kavya Nair",
-    email: "kavya.nair@example.com",
-    phone: "+91 21098 76543",
-    address: "258 MG Road, Kochi",
-    role: "Customer",
-    joinDate: "2024-01-16",
-    lastLogin: "2024-01-17",
-    status: "Suspended",
-    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop&crop=face",
-    totalOrders: 5,
-    totalSpent: 8900,
-    country: "India",
-    city: "Kochi",
-    verified: true,
-    newsletter: false
-  }
-]
+// Mock users removed - using real API data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const mockUsers: UserData[] = []
 
 const roles = ["All", "Customer", "Admin", "Manager", "Support"]
 const statuses = ["All", "Active", "Inactive", "Suspended", "Pending"]
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState<UserData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState("All")
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  // const [showAddModal, setShowAddModal] = useState(false)
-  // const [viewMode, setViewMode] = useState<"table" | "grid">("table")
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await userApi.getAll()
+        if (response.data) {
+          // Fetch orders to calculate stats for each user
+          const ordersResponse = await orderApi.getAll()
+          const orders = ordersResponse.data || []
+          
+          // Calculate user stats
+          const usersData = Array.isArray(response.data) ? response.data : [];
+          const ordersData = Array.isArray(orders) ? orders : [];
+          const usersWithStats = usersData.map((user: any) => {
+            const userOrders = ordersData.filter((order: any) => 
+              order.user && (order.user._id === user._id || order.user.toString() === user._id.toString())
+            )
+            const totalSpent = userOrders.reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0)
+            
+            return {
+              ...user,
+              totalOrders: userOrders.length,
+              totalSpent: totalSpent,
+              status: user.isActive ? 'Active' : 'Inactive',
+              role: user.role === 'admin' ? 'Admin' : 'Customer',
+              joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+              lastLogin: 'N/A', // Backend doesn't track this yet
+              phone: '', // Backend doesn't have phone field
+              address: '', // Backend doesn't have address field
+              country: 'India', // Default
+              city: '', // Backend doesn't have city field
+              verified: true, // Default
+              newsletter: false, // Default
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`
+            }
+          })
+          
+          setUsers(usersWithStats)
+        } else {
+          setError(response.error || 'Failed to fetch users')
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch users')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
 
   // Helper functions
   const getRoleIcon = (role: string) => {
@@ -237,54 +148,43 @@ export default function UsersPage() {
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.phone.includes(searchTerm) ||
-                         user.city.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesRole = roleFilter === "All" || user.role === roleFilter
+                         (user.phone && user.phone.includes(searchTerm)) ||
+                         (user.city && user.city.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesRole = roleFilter === "All" || 
+                       (roleFilter === "Customer" && (user.role === "customer" || user.role === "Customer")) ||
+                       (roleFilter === "Admin" && (user.role === "admin" || user.role === "Admin")) ||
+                       user.role === roleFilter
     const matchesStatus = statusFilter === "All" || user.status === statusFilter
     return matchesSearch && matchesRole && matchesStatus
   })
-
-  // Load users from backend
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const backendUsers: BackendUser[] = await fetchUsers()
-        const mapped: UserData[] = backendUsers.map((u, idx) => ({
-          id: idx + 1,
-          name: u.name,
-          email: u.email,
-          phone: "",
-          address: "",
-          role: (u.role || 'customer').toLowerCase() === 'admin' ? 'Admin' : 'Customer',
-          joinDate: u.createdAt ? u.createdAt.slice(0,10) : '—',
-          lastLogin: u.updatedAt ? u.updatedAt.slice(0,10) : '—',
-          status: u.isActive === false ? 'Inactive' : 'Active',
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name)}`,
-          totalOrders: 0,
-          totalSpent: 0,
-          country: "",
-          city: "",
-          verified: true,
-          newsletter: false,
-        }))
-        setUsers(mapped)
-      } catch (e) {
-        setError('Failed to load users from backend')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
 
   // Statistics
   const stats = {
     total: users.length,
     active: users.filter(u => u.status === "Active").length,
-    customers: users.filter(u => u.role === "Customer").length,
-    totalRevenue: users.reduce((sum, u) => sum + u.totalSpent, 0)
+    customers: users.filter(u => u.role === "customer" || u.role === "Customer").length,
+    totalRevenue: users.reduce((sum, u) => sum + (u.totalSpent || 0), 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading users...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -361,12 +261,6 @@ export default function UsersPage() {
 
       {/* Filters and Search */}
       <Card className="p-6">
-        {loading && (
-          <div className="mb-4 px-3 py-2 rounded bg-blue-50 text-blue-800">Loading users...</div>
-        )}
-        {error && (
-          <div className="mb-4 px-3 py-2 rounded bg-red-100 text-red-800">{error}</div>
-        )}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 text-muted-foreground" size={20} />
@@ -426,7 +320,7 @@ export default function UsersPage() {
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       <img 
-                        src={user.avatar} 
+                        src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} 
                         alt={user.name}
                         className="w-10 h-10 rounded-full object-cover"
                       />
@@ -437,10 +331,12 @@ export default function UsersPage() {
                             <div className="w-2 h-2 bg-white rounded-full"></div>
                           </div>}
                         </div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1">
-                          <MapPin size={12} />
-                          {user.city}, {user.country}
-                        </div>
+                        {(user.city || user.country) && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin size={12} />
+                            {user.city || ''}{user.city && user.country ? ', ' : ''}{user.country || ''}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -450,16 +346,18 @@ export default function UsersPage() {
                         <Mail size={12} className="text-muted-foreground" />
                         {user.email}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Phone size={12} />
-                        {user.phone}
-                      </div>
+                      {user.phone && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone size={12} />
+                          {user.phone}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit ${getRoleColor(user.role)}`}>
-                      {getRoleIcon(user.role)}
-                      {user.role}
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 w-fit ${getRoleColor(user.role === 'admin' ? 'Admin' : user.role === 'customer' ? 'Customer' : user.role)}`}>
+                      {getRoleIcon(user.role === 'admin' ? 'Admin' : user.role === 'customer' ? 'Customer' : user.role)}
+                      {user.role === 'admin' ? 'Admin' : user.role === 'customer' ? 'Customer' : user.role}
                     </span>
                   </td>
                   <td className="py-4 px-4">
@@ -468,9 +366,11 @@ export default function UsersPage() {
                         <Calendar size={12} className="text-muted-foreground" />
                         Joined {user.joinDate}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Last login: {user.lastLogin}
-                      </div>
+                      {user.lastLogin && (
+                        <div className="text-xs text-muted-foreground">
+                          Last login: {user.lastLogin}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="py-4 px-4">
@@ -480,7 +380,7 @@ export default function UsersPage() {
                         {user.totalOrders} orders
                       </div>
                       <div className="text-xs text-green-600 font-medium">
-                        ₹{user.totalSpent.toLocaleString()}
+                        ₹{(user.totalSpent || 0).toLocaleString()}
                       </div>
                     </div>
                   </td>
@@ -532,7 +432,7 @@ export default function UsersPage() {
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-4">
                   <img 
-                    src={selectedUser.avatar} 
+                    src={selectedUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name)}&background=random`} 
                     alt={selectedUser.name}
                     className="w-16 h-16 rounded-full object-cover"
                   />
@@ -608,12 +508,12 @@ export default function UsersPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Total Spent:</span>
-                      <span className="text-sm font-medium text-green-600">₹{selectedUser.totalSpent.toLocaleString()}</span>
+                      <span className="text-sm font-medium text-green-600">₹{(selectedUser.totalSpent || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Average Order:</span>
                       <span className="text-sm font-medium">
-                        ₹{selectedUser.totalOrders > 0 ? Math.round(selectedUser.totalSpent / selectedUser.totalOrders).toLocaleString() : '0'}
+                        ₹{(selectedUser.totalOrders || 0) > 0 ? Math.round((selectedUser.totalSpent || 0) / (selectedUser.totalOrders || 1)).toLocaleString() : '0'}
                       </span>
                     </div>
                   </div>

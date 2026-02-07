@@ -2,10 +2,10 @@ import express, { Router } from 'express';
 const router: Router = express.Router();
 import upload from '../utils/upload';
 import path from 'path';
-import { validateUploadedFile, handleMulterError } from '../middleware/fileValidation';
+import { validateImage, validateVideo, handleMulterError } from '../middleware/fileValidation';
 
 // POST /api/upload - Upload a file
-router.post('/', (upload as any).single('file'), handleMulterError, validateUploadedFile(), (req: any, res: any) => {
+router.post('/', (upload as any).single('file'), handleMulterError, validateImage, (req: any, res: any) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -52,7 +52,7 @@ router.post('/', (upload as any).single('file'), handleMulterError, validateUplo
 });
 
 // POST /api/upload/multiple - Upload multiple files
-router.post('/multiple', (upload as any).array('files', 10), handleMulterError, validateUploadedFile(), (req: any, res: any) => {
+router.post('/multiple', (upload as any).array('files', 10), handleMulterError, validateImage, (req: any, res: any) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });

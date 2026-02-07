@@ -1,29 +1,52 @@
+# Dependencies
 node_modules
 backend/node_modules
+
+# Build outputs
 build
 backend/dist
-.git
-.gitignore
-README.md
+
+# Environment files
 .env
 .env.local
-.env.development
-.env.test
-.env.production
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.env.*.local
+backend/.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Tests
+**/__tests__
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# Logs
 *.log
-coverage
-.nyc_output
-.cache
-.tmp
-.DS_Store
-**/*.log
-**/*.tgz
-**/*.zip
-**/*.tar.gz
-**/node_modules/**
-**/dist/**
-**/build/**
+logs
+
+# Uploads (will be mounted as volume)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp

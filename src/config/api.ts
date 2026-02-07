@@ -12,8 +12,14 @@ export const API_CONFIG = {
     CATEGORIES: '/categories',
     USERS: '/users',
     ORDERS: '/orders',
+    PAYMENTS: '/payments',
+    ANALYTICS: '/analytics',
     UPLOAD: '/upload',
     HEALTH: '/health',
+    HOMEPAGE: '/homepage',
+    WISHLIST: '/wishlist',
+    SEARCH: '/search',
+    SHIPPING: '/shipping',
   },
 };
 

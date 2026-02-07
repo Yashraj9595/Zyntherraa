@@ -82,15 +82,15 @@ export const useNotifications = (): UseNotificationsReturn => {
     options: AppNotificationOptions = {}
   ): Promise<void> => {
     try {
-      // Auto-close functionality
-      if (options.autoClose && options.closeDelay) {
-        setTimeout(() => {
-          // Close notification logic would go here
-          // This is a simplified implementation
-        }, options.closeDelay);
-      }
-
       await notificationManager.showNotification(title, options);
+      
+      // Auto-close functionality - Note: Browser notifications can't be programmatically closed
+      // This is a limitation of the Notification API. The notification will auto-close based on
+      // browser settings or user interaction. For better control, use a custom in-app notification system.
+      if (options.autoClose && options.closeDelay) {
+        // Log for debugging - actual closing happens via browser/user interaction
+        console.log(`Notification will auto-close in ${options.closeDelay}ms (browser-dependent)`);
+      }
     } catch (error) {
       console.error('Failed to show notification:', error);
     }

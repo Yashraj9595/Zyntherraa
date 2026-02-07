@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { userApi } from '../../utils/api';
-import { useAuth } from './../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,7 +11,20 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { login, isAuthenticated } = useAuth();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirect = searchParams.get('redirect');
+      if (redirect) {
+        navigate(redirect, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,23 +32,50 @@ const LoginPage: React.FC = () => {
     setError('');
     
     try {
-      const response = await userApi.login(email, password) as any;
+      const response = await userApi.login({ email, password });
       
-      if (response.token) {
-        // Save token to localStorage
-        localStorage.setItem('token', response.token);
+      if (response.error) {
+        setError(response.error);
+        setLoading(false);
+        return;
+      }
+      
+      if (response.data) {
+        const userData = response.data as any;
         
-        // Update auth context
-        login(response);
-        
-        // Redirect based on role
-        if (response.role === 'admin') {
-          navigate('/admin');
+        // Check if email verification is required (user not verified yet)
+        if (userData.requiresVerification) {
+          // Redirect to OTP verification page for email verification
+          navigate('/auth/verify-otp', {
+            replace: true,
+            state: { 
+              email: userData.email || email,
+              purpose: 'registration',
+              redirect: searchParams.get('redirect')
+            }
+          });
         } else {
-          navigate('/');
+          // User is verified, login directly
+          if (userData.token) {
+            localStorage.setItem('token', userData.token);
+          }
+          login(userData);
+          
+          const redirect = searchParams.get('redirect');
+          if (redirect) {
+            navigate(redirect, { replace: true });
+          } else if (userData.role === 'admin') {
+            // Show option to go to admin panel or stay on homepage
+            const goToAdmin = window.confirm('Welcome Admin! Would you like to go to the Admin Panel?');
+            if (goToAdmin) {
+              navigate('/admin', { replace: true });
+            } else {
+              navigate('/', { replace: true });
+            }
+          } else {
+            navigate('/', { replace: true });
+          }
         }
-      } else {
-        setError('Invalid response from server');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to login');
@@ -44,23 +85,33 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 bottom-nav-safe">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
+        {/* Logo/Header */}
+        <div className="text-center">
+          <Link to="/" className="inline-block mb-4">
+            <h1 className="logo-primary text-2xl sm:text-3xl">ZYNTHERRAA</h1>
+          </Link>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Sign in to your account
           </h2>
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
+            Welcome back! Please enter your details.
+          </p>
         </div>
+
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm sm:text-base" role="alert">
             <span className="block sm:inline">{error}</span>
           </div>
         )}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <input type="hidden" name="remember" value="true" />
-          <div className="rounded-md shadow-sm -space-y-px">
+
+        {/* Login Form */}
+        <form className="mt-6 sm:mt-8 space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4 sm:space-y-5">
             <div>
-              <label htmlFor="email-address" className="sr-only">
+              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-2">
                 Email address
               </label>
               <input
@@ -71,12 +122,12 @@ const LoginPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black sm:text-sm"
+                placeholder="Enter your email"
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
@@ -87,8 +138,8 @@ const LoginPage: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className="appearance-none relative block w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-black sm:text-sm"
+                placeholder="Enter your password"
               />
             </div>
           </div>
@@ -99,21 +150,20 @@ const LoginPage: React.FC = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <button 
-                type="button"
-                className="font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:underline"
-                onClick={() => alert('Forgot password functionality to be implemented')}
+              <Link 
+                to="/auth/forgot-password"
+                className="font-medium text-gray-700 hover:text-black focus:outline-none focus:underline transition-colors"
               >
-                Forgot your password?
-              </button>
+                Forgot password?
+              </Link>
             </div>
           </div>
 
@@ -121,22 +171,28 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : null}
-              {loading ? 'Signing in...' : 'Sign in'}
+                <>
+                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
         </form>
-        <div className="text-sm text-center">
-          <Link to="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Don't have an account? Register
-          </Link>
+
+        {/* Register Link */}
+        <div className="text-sm sm:text-base text-center">
+          <p className="text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/auth/register" className="font-medium text-black hover:text-gray-700 transition-colors">
+              Register here
+            </Link>
+          </p>
         </div>
       </div>
     </div>

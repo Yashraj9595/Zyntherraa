@@ -1,107 +1,78 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, CheckCircle, Package, TrendingDown, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { AlertTriangle, CheckCircle, Package, TrendingDown, TrendingUp, Loader2 } from "lucide-react";
+import { analyticsApi } from "../../../utils/api";
 
 interface InventoryItem {
   id: string;
+  productId: string;
   productName: string;
   category: string;
   sku: string;
+  variantId: string;
+  size?: string;
+  color?: string;
   currentStock: number;
   reservedStock: number;
   availableStock: number;
   minStockLevel: number;
   maxStockLevel: number;
-  lastUpdated: string;
+  lastUpdated: string | Date;
   status: "in-stock" | "low-stock" | "out-of-stock";
 }
 
-// Mock data for inventory items
-const mockInventoryData: InventoryItem[] = [
-  {
-    id: "1",
-    productName: "Cotton Kurta",
-    category: "Clothing",
-    sku: "CK-2023-001-M-BLUE",
-    currentStock: 45,
-    reservedStock: 5,
-    availableStock: 40,
-    minStockLevel: 10,
-    maxStockLevel: 100,
-    lastUpdated: "2025-10-20",
-    status: "in-stock"
-  },
-  {
-    id: "2",
-    productName: "Running Sneakers",
-    category: "Footwear",
-    sku: "RS-2023-002-9-BLACK",
-    currentStock: 25,
-    reservedStock: 10,
-    availableStock: 15,
-    minStockLevel: 20,
-    maxStockLevel: 50,
-    lastUpdated: "2025-10-19",
-    status: "low-stock"
-  },
-  {
-    id: "3",
-    productName: "Leather Handbag",
-    category: "Accessories",
-    sku: "LH-2023-003-FS-BROWN",
-    currentStock: 0,
-    reservedStock: 0,
-    availableStock: 0,
-    minStockLevel: 5,
-    maxStockLevel: 30,
-    lastUpdated: "2025-10-18",
-    status: "out-of-stock"
-  },
-  {
-    id: "4",
-    productName: "Silk Scarf",
-    category: "Accessories",
-    sku: "SS-2023-004-FS-RED",
-    currentStock: 8,
-    reservedStock: 2,
-    availableStock: 6,
-    minStockLevel: 15,
-    maxStockLevel: 40,
-    lastUpdated: "2025-10-20",
-    status: "low-stock"
-  },
-  {
-    id: "5",
-    productName: "Denim Jeans",
-    category: "Clothing",
-    sku: "DJ-2023-005-32-BLUE",
-    currentStock: 65,
-    reservedStock: 15,
-    availableStock: 50,
-    minStockLevel: 20,
-    maxStockLevel: 120,
-    lastUpdated: "2025-10-21",
-    status: "in-stock"
-  }
-];
-
 export default function InventoryPage() {
-  const [inventoryItems] = useState<InventoryItem[]>(mockInventoryData);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState("name");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [summary, setSummary] = useState({
+    totalItems: 0,
+    inStockItems: 0,
+    lowStockItems: 0,
+    outOfStockItems: 0,
+    totalAvailableStock: 0,
+  });
 
-  // Get unique categories for filter
-  const categories = Array.from(new Set(mockInventoryData.map(item => item.category)));
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await analyticsApi.getInventory();
+        
+        if (response.data) {
+          const data = response.data as any;
+          setInventoryItems(data.items || []);
+          setCategories(data.categories || []);
+          if (data.summary) {
+            setSummary(data.summary);
+          }
+        } else {
+          setError(response.error || 'Failed to load inventory data');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load inventory data');
+        console.error('Inventory fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Calculate summary statistics
-  const totalItems = inventoryItems.length;
-  const inStockItems = inventoryItems.filter(item => item.status === "in-stock").length;
-  const lowStockItems = inventoryItems.filter(item => item.status === "low-stock").length;
-  const outOfStockItems = inventoryItems.filter(item => item.status === "out-of-stock").length;
-  const totalAvailableStock = inventoryItems.reduce((sum, item) => sum + item.availableStock, 0);
+    fetchInventory();
+  }, []);
+
+  // Use summary from API or calculate from items
+  const totalItems = summary.totalItems || inventoryItems.length;
+  const inStockItems = summary.inStockItems || inventoryItems.filter(item => item.status === "in-stock").length;
+  const lowStockItems = summary.lowStockItems || inventoryItems.filter(item => item.status === "low-stock").length;
+  const outOfStockItems = summary.outOfStockItems || inventoryItems.filter(item => item.status === "out-of-stock").length;
+  const totalAvailableStock = summary.totalAvailableStock || inventoryItems.reduce((sum, item) => sum + item.availableStock, 0);
 
   const filteredItems = inventoryItems.filter(item => {
     const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,6 +114,33 @@ export default function InventoryPage() {
         </span>;
     }
   };
+
+  const formatDate = (date: string | Date) => {
+    if (!date) return 'N/A';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading inventory data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -293,7 +291,7 @@ export default function InventoryPage() {
                   <td className="py-3 px-4 font-medium text-foreground">{item.availableStock}</td>
                   <td className="py-3 px-4 text-muted-foreground">{item.minStockLevel}</td>
                   <td className="py-3 px-4">{getStatusBadge(item.status)}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{item.lastUpdated}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{formatDate(item.lastUpdated)}</td>
                 </tr>
               ))}
             </tbody>

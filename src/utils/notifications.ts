@@ -27,9 +27,24 @@ export class NotificationManager {
         return false;
       }
 
-      // Get service worker registration
-      this.registration = await navigator.serviceWorker.ready;
-      console.log('Notification system initialized');
+      // Wait for service worker to be ready
+      try {
+        this.registration = await navigator.serviceWorker.ready;
+        console.log('Notification system initialized with service worker');
+      } catch (swError) {
+        // Service worker might not be registered yet, try to register it
+        console.warn('Service worker not ready, attempting to register...');
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+          this.registration = await navigator.serviceWorker.ready;
+          console.log('Service worker registered and ready');
+        } catch (registerError) {
+          console.warn('Service worker registration failed, notifications will use browser API:', registerError);
+          // Continue without service worker - will use browser Notification API
+          this.registration = null;
+        }
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to initialize notifications:', error);
@@ -64,7 +79,13 @@ export class NotificationManager {
     options?: NotificationOptions
   ): Promise<void> {
     try {
-      const permission = await this.requestPermission();
+      // Check current permission first
+      let permission = this.getPermissionStatus();
+      
+      // Only request permission if it's not already granted or denied
+      if (permission === 'default') {
+        permission = await this.requestPermission();
+      }
       
       if (permission !== 'granted') {
         throw new Error('Notification permission not granted');

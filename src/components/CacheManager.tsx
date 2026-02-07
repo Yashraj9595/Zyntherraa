@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { LocalStorageManager } from '../utils/localStorage';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface CacheManagerProps {
   appVersion?: string;
@@ -12,34 +13,55 @@ export const CacheManager: React.FC<CacheManagerProps> = ({
 }) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { showUpdateNotification, showOnlineNotification, showOfflineNotification } = useNotifications();
 
   useEffect(() => {
     // Check version on mount
     const versionChanged = LocalStorageManager.checkVersionAndClearCache(appVersion);
     if (versionChanged) {
       console.log('App version updated, cache cleared');
+      // Show update notification
+      showUpdateNotification();
     }
 
     // Listen for service worker messages
     const handleServiceWorkerMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
         setUpdateAvailable(true);
+        showUpdateNotification();
       } else if (event.data && event.data.type === 'CACHE_CLEARED') {
         setIsUpdating(false);
         window.location.reload();
       }
     };
 
+    // Online/Offline detection
+    const handleOnline = () => {
+      console.log('App is back online');
+      showOnlineNotification();
+    };
+
+    const handleOffline = () => {
+      console.log('App is offline');
+      showOfflineNotification();
+    };
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
     }
+
+    // Add online/offline listeners
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
       }
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
-  }, [appVersion]);
+  }, [appVersion, showUpdateNotification, showOnlineNotification, showOfflineNotification]);
 
   const handleUpdate = async () => {
     setIsUpdating(true);

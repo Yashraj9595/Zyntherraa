@@ -26,54 +26,46 @@ const seedData = async () => {
     await Category.deleteMany({});
     await User.deleteMany({});
     
-    // Create sample categories without subcategories first
-    const clothingCategory = await Category.create({
-      name: "Clothing",
-      productCount: 0,
-      status: "Active",
-      subcategories: []
-    });
-    
-    const footwearCategory = await Category.create({
-      name: "Footwear",
-      productCount: 0,
-      status: "Active",
-      subcategories: []
-    });
-    
-    const accessoriesCategory = await Category.create({
-      name: "Accessories",
-      productCount: 0,
-      status: "Active",
-      subcategories: []
-    });
-    
-    // Now add subcategories with proper parentId references
-    clothingCategory.subcategories = [
-      { name: "T-Shirts", productCount: 0, status: "Active", parentId: clothingCategory._id },
-      { name: "Shirts", productCount: 0, status: "Active", parentId: clothingCategory._id },
-      { name: "Jeans", productCount: 0, status: "Active", parentId: clothingCategory._id },
-      { name: "Dresses", productCount: 0, status: "Active", parentId: clothingCategory._id }
+    // Create sample categories
+    const categories = [
+      {
+        name: "Clothing",
+        productCount: 0,
+        status: "Active",
+        subcategories: [
+          { name: "T-Shirts", productCount: 0, status: "Active", parentId: null },
+          { name: "Shirts", productCount: 0, status: "Active", parentId: null },
+          { name: "Jeans", productCount: 0, status: "Active", parentId: null },
+          { name: "Dresses", productCount: 0, status: "Active", parentId: null }
+        ]
+      },
+      {
+        name: "Footwear",
+        productCount: 0,
+        status: "Active",
+        subcategories: [
+          { name: "Sneakers", productCount: 0, status: "Active", parentId: null },
+          { name: "Boots", productCount: 0, status: "Active", parentId: null },
+          { name: "Sandals", productCount: 0, status: "Active", parentId: null }
+        ]
+      },
+      {
+        name: "Accessories",
+        productCount: 0,
+        status: "Active",
+        subcategories: [
+          { name: "Bags", productCount: 0, status: "Active", parentId: null },
+          { name: "Watches", productCount: 0, status: "Active", parentId: null },
+          { name: "Jewelry", productCount: 0, status: "Active", parentId: null }
+        ]
+      }
     ];
-    await clothingCategory.save();
     
-    footwearCategory.subcategories = [
-      { name: "Sneakers", productCount: 0, status: "Active", parentId: footwearCategory._id },
-      { name: "Boots", productCount: 0, status: "Active", parentId: footwearCategory._id },
-      { name: "Sandals", productCount: 0, status: "Active", parentId: footwearCategory._id }
-    ];
-    await footwearCategory.save();
+    // Insert categories
+    const createdCategories = await Category.insertMany(categories);
+    console.log('Categories inserted');
     
-    accessoriesCategory.subcategories = [
-      { name: "Bags", productCount: 0, status: "Active", parentId: accessoriesCategory._id },
-      { name: "Watches", productCount: 0, status: "Active", parentId: accessoriesCategory._id },
-      { name: "Jewelry", productCount: 0, status: "Active", parentId: accessoriesCategory._id }
-    ];
-    await accessoriesCategory.save();
-    
-    console.log('Categories and subcategories inserted');
-    
-    // Create sample products with placeholder images
+    // Create sample products
     const products = [
       {
         title: "Cotton T-Shirt",
@@ -86,7 +78,7 @@ const seedData = async () => {
           { 
             size: "M", 
             color: "Blue", 
-            images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'], 
+            images: [], 
             videos: [], 
             price: 1299, 
             stock: 45, 
@@ -96,7 +88,7 @@ const seedData = async () => {
           { 
             size: "L", 
             color: "White", 
-            images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400'], 
+            images: [], 
             videos: [], 
             price: 1299, 
             stock: 30, 
@@ -117,7 +109,7 @@ const seedData = async () => {
           { 
             size: "9", 
             color: "Black", 
-            images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'], 
+            images: [], 
             videos: [], 
             price: 2499, 
             stock: 25, 
@@ -127,7 +119,7 @@ const seedData = async () => {
           { 
             size: "10", 
             color: "White", 
-            images: ['https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=400'], 
+            images: [], 
             videos: [], 
             price: 2499, 
             stock: 20, 

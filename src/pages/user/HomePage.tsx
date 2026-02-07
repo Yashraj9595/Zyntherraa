@@ -1,25 +1,38 @@
 import React from 'react';
 import ImageSlider from "./ImageSlider";
-import ClothesCollection from "./ClothesCollection";
 import CategorySection from "./CategorySection";
+import FeaturedProducts from "./FeaturedProducts";
+import WatchAndShop from "./WatchAndShop";
+import ClothesCollection from "./ClothesCollection";
 
 const HomePage: React.FC = () => {
   return (
-    <>
-      {/*Slider section*/}
-      <div className="w-full h-full">
+    <div className="min-h-screen bg-background">
+      {/* Hero Banner Slider Section */}
+      <section className="w-full">
         <ImageSlider />
-      </div>
+      </section>
 
-      <div>
+      {/* Shop by Category Section */}
+      <section className="w-full">
         <CategorySection />
-      </div>
+      </section>
 
-      {/*Our Collections section*/}
-      <div className="w-full">
-        <ClothesCollection/>
-      </div>
-    </>
+      {/* Featured Products Section */}
+      <section className="w-full">
+        <FeaturedProducts />
+      </section>
+
+      {/* Watch & Shop Section */}
+      <section className="w-full">
+        <WatchAndShop />
+      </section>
+
+      {/* Our Collections Section */}
+      <section className="w-full">
+        <ClothesCollection />
+      </section>
+    </div>
   );
 };
 

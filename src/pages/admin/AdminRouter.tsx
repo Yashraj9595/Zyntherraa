@@ -9,32 +9,7 @@ import UsersPage from './UsersPage/UsersPage';
 import SettingsPage from './settings-page';
 import InventoryPage from './inventory/InventoryPage';
 import ReportsPage from './reports/ReportsPage';
-
-// Dashboard component
-const Dashboard = () => (
-  <div className="p-8">
-    <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-    <p className="text-muted-foreground mt-2">Welcome to your admin dashboard</p>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
-      <div className="bg-card p-6 rounded-lg border border-border">
-        <h3 className="text-lg font-semibold text-foreground">Total Products</h3>
-        <p className="text-3xl font-bold text-primary mt-2">142</p>
-      </div>
-      <div className="bg-card p-6 rounded-lg border border-border">
-        <h3 className="text-lg font-semibold text-foreground">Total Orders</h3>
-        <p className="text-3xl font-bold text-primary mt-2">24</p>
-      </div>
-      <div className="bg-card p-6 rounded-lg border border-border">
-        <h3 className="text-lg font-semibold text-foreground">Total Users</h3>
-        <p className="text-3xl font-bold text-primary mt-2">1,240</p>
-      </div>
-      <div className="bg-card p-6 rounded-lg border border-border">
-        <h3 className="text-lg font-semibold text-foreground">Revenue</h3>
-        <p className="text-3xl font-bold text-primary mt-2">₹1,24,500</p>
-      </div>
-    </div>
-  </div>
-);
+import Dashboard from './dashboard/Dashboard';
 
 export default function AdminRouter() {
   return (

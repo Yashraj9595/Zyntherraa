@@ -109,11 +109,8 @@ export const productSchemas = {
           price: commonValidators.positiveNumber.required(),
           stock: commonValidators.positiveInteger.required(),
           sku: Joi.string().trim().max(50).optional(),
-          images: Joi.array().items(commonValidators.imagePath).max(10).optional().default([]),
-          videos: Joi.array().items(commonValidators.url).max(10).optional().default([]),
+          images: Joi.array().items(commonValidators.imagePath).min(1).max(10).optional(),
           video: commonValidators.url.optional(),
-          styleNumber: Joi.string().trim().max(50).optional(),
-          fabric: Joi.string().trim().max(100).optional(),
         })
       )
       .min(1)
@@ -136,11 +133,8 @@ export const productSchemas = {
           price: commonValidators.positiveNumber.required(),
           stock: commonValidators.positiveInteger.required(),
           sku: Joi.string().trim().max(50).optional(),
-          images: Joi.array().items(commonValidators.imagePath).max(10).optional().default([]),
-          videos: Joi.array().items(commonValidators.url).max(10).optional().default([]),
+          images: Joi.array().items(commonValidators.imagePath).min(1).max(10).optional(),
           video: commonValidators.url.optional(),
-          styleNumber: Joi.string().trim().max(50).optional(),
-          fabric: Joi.string().trim().max(100).optional(),
         })
       )
       .min(1)

@@ -1,60 +1,154 @@
-// Service Worker - CACHING DISABLED FOR DEVELOPMENT
-// All fetch requests pass through without caching
-
+// Dynamic cache versioning based on timestamp
 const CACHE_VERSION = new Date().getTime();
 const CACHE_NAME = `zyntherraa-app-v${CACHE_VERSION}`;
+const STATIC_CACHE = `zyntherraa-static-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `zyntherraa-dynamic-v${CACHE_VERSION}`;
 
-// Install event - skip caching
+const urlsToCache = [
+  '/',
+  '/static/js/bundle.js',
+  '/static/css/main.css',
+  '/manifest.json',
+  '/logo/logo192x192.png',
+  '/logo/logo512x512.jpg'
+];
+
+// Install event - cache static assets and notify clients
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing (cache disabled)...');
-  self.skipWaiting();
+  console.log('Service Worker: Installing new version...');
+  
+  // Notify all clients about the update
+  self.clients.matchAll().then((clients) => {
+    clients.forEach((client) => {
+      client.postMessage({ 
+        type: 'NEW_VERSION_AVAILABLE',
+        version: CACHE_VERSION 
+      });
+    });
+  });
+  
+  event.waitUntil(
+    caches.open(STATIC_CACHE)
+      .then((cache) => {
+        console.log('Service Worker: Caching static assets');
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        console.log('Service Worker: Skip waiting');
+        return self.skipWaiting();
+      })
+  );
 });
 
-// Activate event - clean up any old caches
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating (cache disabled)...');
+  console.log('Service Worker: Activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          console.log('Service Worker: Deleting cache', cacheName);
-          return caches.delete(cacheName);
+          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+            console.log('Service Worker: Deleting old cache', cacheName);
+            return caches.delete(cacheName);
+          }
         })
       );
     }).then(() => {
-      console.log('Service Worker: All caches cleared');
+      console.log('Service Worker: Claiming clients');
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - NO CACHING, just pass through
+// Fetch event - network first for API calls, cache first for static assets
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
   
-  // Skip caching for unsupported URL schemes (chrome-extension, etc.)
-  if (!url.protocol.startsWith('http')) {
+  // Network-first strategy for API calls and dynamic content
+  if (url.pathname.startsWith('/api/') || 
+      url.pathname.includes('admin') || 
+      url.search.includes('timestamp') ||
+      event.request.headers.get('cache-control') === 'no-cache') {
+    
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(event.request);
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(DYNAMIC_CACHE)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        } catch (error) {
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (event.request.destination === 'document') {
+            const offlinePage = await caches.match('/');
+            if (offlinePage) {
+              return offlinePage;
+            }
+          }
+          return new Response('', { status: 502, statusText: 'Service Unavailable' });
+        }
+      })()
+    );
     return;
   }
 
-  // Always fetch from network, no caching
+  // Cache-first strategy for static assets
   event.respondWith(
-    fetch(event.request).catch(() => {
-      // Return offline page for navigation requests if network fails
-      if (event.request.destination === 'document') {
-        return new Response('Offline - Please check your connection', {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: new Headers({
-            'Content-Type': 'text/plain'
-          })
-        });
+    (async () => {
+      try {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          const cacheDate = cachedResponse.headers.get('date');
+          const isOld = cacheDate && (Date.now() - new Date(cacheDate).getTime()) > 3600000;
+
+          if (isOld && navigator.onLine) {
+            fetch(event.request)
+              .then((response) => {
+                if (response && response.status === 200) {
+                  caches.open(STATIC_CACHE)
+                    .then((cache) => {
+                      cache.put(event.request, response.clone());
+                    });
+                }
+              })
+              .catch(() => {});
+          }
+
+          return cachedResponse;
+        }
+
+        const response = await fetch(event.request);
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
+        const responseToCache = response.clone();
+        caches.open(STATIC_CACHE)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+
+        return response;
+      } catch (error) {
+        if (event.request.destination === 'document') {
+          const offlinePage = await caches.match('/');
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
+        return new Response('', { status: 502, statusText: 'Service Unavailable' });
       }
-      throw new Error('Network request failed');
-    })
+    })()
   );
 });
 
@@ -64,7 +158,7 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: event.data ? event.data.text() : 'New notification from Zyntherraa!',
-    icon: '/logo192.png',
+    icon: '/logo/logo192x192.png',
     badge: '/favicon.ico',
     vibrate: [100, 50, 100],
     data: {
@@ -75,7 +169,7 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: 'Open App',
-        icon: '/logo192.png'
+        icon: '/logo/logo192x192.png'
       },
       {
         action: 'close',
@@ -92,19 +186,44 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
-  console.log('Service Worker: Notification clicked');
+  console.log('Service Worker: Notification clicked', event.action);
   
   event.notification.close();
 
-  if (event.action === 'explore') {
+  // Handle notification actions
+  if (event.action === 'open' || event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        // If a window is already open, focus it
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url === '/' && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Otherwise, open a new window
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
     );
   } else if (event.action === 'close') {
+    // Just close the notification (already closed above)
     event.notification.close();
   } else {
+    // Default: open the app when notification is clicked (no action button)
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url === '/' && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
     );
   }
 });

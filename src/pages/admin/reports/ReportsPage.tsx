@@ -1,46 +1,106 @@
 "use client";
 
-import { useState } from "react";
-import { BarChart, TrendingUp, ShoppingCart, IndianRupee } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BarChart, TrendingUp, ShoppingCart, IndianRupee, Loader2 } from "lucide-react";
+import { analyticsApi } from "../../../utils/api";
 
-// Mock data for reports
-const salesData = [
-  { month: "Jan", sales: 4000, orders: 24 },
-  { month: "Feb", sales: 3000, orders: 13 },
-  { month: "Mar", sales: 2000, orders: 18 },
-  { month: "Apr", sales: 2780, orders: 12 },
-  { month: "May", sales: 1890, orders: 19 },
-  { month: "Jun", sales: 2390, orders: 15 },
-  { month: "Jul", sales: 3490, orders: 22 },
-  { month: "Aug", sales: 4000, orders: 28 },
-  { month: "Sep", sales: 3000, orders: 17 },
-  { month: "Oct", sales: 2000, orders: 14 },
-];
+interface SalesData {
+  month: string;
+  sales: number;
+  orders: number;
+}
 
-const categoryData = [
-  { name: "Clothing", value: 400, color: "#3B82F6" },
-  { name: "Footwear", value: 300, color: "#10B981" },
-  { name: "Accessories", value: 200, color: "#F59E0B" },
-  { name: "Other", value: 100, color: "#8B5CF6" },
-];
+interface CategoryData {
+  name: string;
+  value: number;
+  color: string;
+}
 
-const topProducts = [
-  { id: 1, name: "Cotton Kurta", category: "Clothing", sales: 120, revenue: 156000 },
-  { id: 2, name: "Running Sneakers", category: "Footwear", sales: 95, revenue: 237500 },
-  { id: 3, name: "Leather Handbag", category: "Accessories", sales: 78, revenue: 312000 },
-  { id: 4, name: "Silk Scarf", category: "Accessories", sales: 65, revenue: 97500 },
-  { id: 5, name: "Denim Jeans", category: "Clothing", sales: 54, revenue: 108000 },
-];
+interface TopProduct {
+  id: number;
+  name: string;
+  category: string;
+  sales: number;
+  revenue: number;
+}
 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("sales");
   const [timeRange, setTimeRange] = useState("monthly");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [summary, setSummary] = useState({
+    totalSales: 0,
+    totalOrders: 0,
+    avgOrderValue: 0,
+    topProduct: null as TopProduct | null,
+  });
 
-  // Calculate summary statistics
-  const totalSales = salesData.reduce((sum, item) => sum + item.sales, 0);
-  const totalOrders = salesData.reduce((sum, item) => sum + item.orders, 0);
-  const avgOrderValue = totalSales / totalOrders;
-  const topProduct = topProducts[0];
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await analyticsApi.getReports({ timeRange });
+        
+        if (response.data) {
+          const data = response.data as any;
+          setSalesData(data.salesData || []);
+          setCategoryData(data.categoryData || []);
+          setTopProducts(data.topProducts || []);
+          if (data.summary) {
+            setSummary({
+              totalSales: data.summary.totalSales || 0,
+              totalOrders: data.summary.totalOrders || 0,
+              avgOrderValue: data.summary.avgOrderValue || 0,
+              topProduct: data.summary.topProduct || null,
+            });
+          }
+        } else {
+          setError(response.error || 'Failed to load reports data');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load reports data');
+        console.error('Reports fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [timeRange]);
+
+  const totalSales = summary.totalSales || salesData.reduce((sum, item) => sum + item.sales, 0);
+  const totalOrders = summary.totalOrders || salesData.reduce((sum, item) => sum + item.orders, 0);
+  const avgOrderValue = summary.avgOrderValue || (totalOrders > 0 ? totalSales / totalOrders : 0);
+  const topProduct = summary.topProduct || topProducts[0] || null;
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="animate-spin h-12 w-12 mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading reports data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate max sales for chart scaling
+  const maxSales = salesData.length > 0 ? Math.max(...salesData.map(d => d.sales)) : 5000;
 
   return (
     <div className="p-8 space-y-6">
@@ -94,7 +154,7 @@ export default function ReportsPage() {
             </div>
             <div className="ml-4">
               <h3 className="text-sm font-medium text-muted-foreground">Top Product</h3>
-              <p className="text-lg font-bold text-foreground truncate">{topProduct.name}</p>
+              <p className="text-lg font-bold text-foreground truncate">{topProduct?.name || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -141,7 +201,7 @@ export default function ReportsPage() {
                 <div className="text-xs text-muted-foreground mb-1">{item.month}</div>
                 <div 
                   className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
-                  style={{ height: `${(item.sales / 5000) * 250}px` }}
+                  style={{ height: maxSales > 0 ? `${(item.sales / maxSales) * 250}px` : '0px' }}
                   title={`₹${item.sales.toLocaleString()} in ${item.month}`}
                 />
                 <div className="text-xs text-muted-foreground mt-1">{item.orders} orders</div>
@@ -156,8 +216,9 @@ export default function ReportsPage() {
           <div className="h-80 flex items-center justify-center">
             <div className="relative w-64 h-64">
               {categoryData.map((item, index) => {
-                const startAngle = categoryData.slice(0, index).reduce((sum, d) => sum + (d.value / 1000) * 360, 0);
-                const angle = (item.value / 1000) * 360;
+                const totalValue = categoryData.reduce((sum, d) => sum + d.value, 0);
+                const startAngle = categoryData.slice(0, index).reduce((sum, d) => sum + (d.value / totalValue) * 360, 0);
+                const angle = (item.value / totalValue) * 360;
                 const x1 = 50 + 40 * Math.cos((startAngle * Math.PI) / 180);
                 const y1 = 50 + 40 * Math.sin((startAngle * Math.PI) / 180);
                 const x2 = 50 + 40 * Math.cos(((startAngle + angle) * Math.PI) / 180);
@@ -185,7 +246,7 @@ export default function ReportsPage() {
                   style={{ backgroundColor: item.color }}
                 />
                 <span className="text-sm text-foreground">{item.name}</span>
-                <span className="text-sm text-muted-foreground ml-auto">₹{item.value * 1000}</span>
+                <span className="text-sm text-muted-foreground ml-auto">₹{item.value.toLocaleString()}</span>
               </div>
             ))}
           </div>

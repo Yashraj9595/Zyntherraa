@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { getActiveCategories, getActiveSubcategories } from '../data/categories';
-import type { Category, Subcategory } from '../data/categories';
+import { categoryApi } from '../utils/api';
+
+interface BackendSubcategory {
+  _id: string;
+  name: string;
+  productCount: number;
+  status: 'Active' | 'Inactive';
+  parentId: string;
+}
+
+interface BackendCategory {
+  _id: string;
+  name: string;
+  productCount: number;
+  status: 'Active' | 'Inactive';
+  subcategories: BackendSubcategory[];
+}
 
 interface CategorySelectProps {
   selectedCategory?: string;
@@ -20,16 +35,42 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
   showSubcategories = true,
   placeholder = "Select Category"
 }) => {
-  const [categories] = useState<Category[]>(getActiveCategories());
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<BackendCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<BackendSubcategory[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await categoryApi.getAll();
+      if (response.data) {
+        const activeCategories = Array.isArray(response.data) 
+          ? response.data.filter((cat: any) => cat.status === 'Active')
+          : [];
+        setCategories(activeCategories);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedCategory) {
       const category = categories.find(cat => cat.name === selectedCategory);
       if (category) {
-        setSelectedCategoryId(category.id);
-        setSubcategories(getActiveSubcategories(category.id));
+        setSelectedCategoryId(category._id);
+        const activeSubcategories = category.subcategories.filter(sub => sub.status === 'Active');
+        setSubcategories(activeSubcategories);
+      } else {
+        setSelectedCategoryId(null);
+        setSubcategories([]);
       }
     } else {
       setSelectedCategoryId(null);
@@ -42,8 +83,8 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
     const category = categories.find(cat => cat.name === categoryName);
     
     if (category) {
-      setSelectedCategoryId(category.id);
-      const activeSubcategories = getActiveSubcategories(category.id);
+      setSelectedCategoryId(category._id);
+      const activeSubcategories = category.subcategories.filter(sub => sub.status === 'Active');
       setSubcategories(activeSubcategories);
       
       // Reset subcategory when category changes
@@ -60,6 +101,22 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
     onCategoryChange(selectedCategory, subcategoryName);
   };
 
+  if (loading) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="relative">
+          <label className="block text-sm font-medium mb-2">Category</label>
+          <select
+            disabled
+            className="w-full p-2 border border-input rounded-lg bg-background text-foreground appearance-none pr-8"
+          >
+            <option>Loading categories...</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Main Category Select */}
@@ -73,7 +130,7 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
           >
             <option value="">{placeholder}</option>
             {categories.map(category => (
-              <option key={category.id} value={category.name}>
+              <option key={category._id} value={category.name}>
                 {category.name} ({category.subcategories.filter(sub => sub.status === "Active").length} subcategories)
               </option>
             ))}
@@ -94,7 +151,7 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
             >
               <option value="">Select Subcategory (Optional)</option>
               {subcategories.map(subcategory => (
-                <option key={subcategory.id} value={subcategory.name}>
+                <option key={subcategory._id} value={subcategory.name}>
                   {subcategory.name} ({subcategory.productCount} products)
                 </option>
               ))}
@@ -129,8 +186,43 @@ export const SimpleCategorySelect: React.FC<{
   onChange: (value: string) => void;
   className?: string;
 }> = ({ value, onChange, className = "" }) => {
-  const categories = getActiveCategories();
-  
+  const [categories, setCategories] = useState<BackendCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await categoryApi.getAll();
+      if (response.data) {
+        const activeCategories = Array.isArray(response.data) 
+          ? response.data.filter((cat: any) => cat.status === 'Active')
+          : [];
+        setCategories(activeCategories);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={`relative ${className}`}>
+        <select
+          disabled
+          className="w-full p-2 border border-input rounded-lg bg-background text-foreground appearance-none pr-8"
+        >
+          <option>Loading categories...</option>
+        </select>
+      </div>
+    );
+  }
+
   return (
     <div className={`relative ${className}`}>
       <select
@@ -140,7 +232,7 @@ export const SimpleCategorySelect: React.FC<{
       >
         <option value="">Select Category</option>
         {categories.map(category => (
-          <option key={category.id} value={category.name}>
+          <option key={category._id} value={category.name}>
             {category.name}
           </option>
         ))}

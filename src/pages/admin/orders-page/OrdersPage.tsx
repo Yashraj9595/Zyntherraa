@@ -1,129 +1,100 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Eye, ChevronDown, Check, X } from "lucide-react"
-import { fetchOrders, type BackendOrder } from "../../../utils/ordersApi"
+import { orderApi } from "../../../utils/api"
 
 // Order status options
 const orderStatuses = ["Pending", "Processing", "Shipped", "Delivered", "Completed", "Cancelled", "Refunded"]
 
-// Mock order data kept as fallback; replaced at runtime by backend data
-const mockOrders = [
-  { 
-    id: "#ORD-001", 
-    customer: "Rajesh Kumar", 
-    amount: "₹2,345", 
-    status: "Completed", 
-    date: "2024-01-15", 
-    items: 3,
-    customerEmail: "rajesh.kumar@example.com",
-    customerPhone: "+91 98765 43210",
-    customerAddress: "123 Main Street, Mumbai, Maharashtra 400001",
-    products: [
-      { id: 1, name: "Premium Headphones", quantity: 1, price: "₹2,345", styleNumber: "HP-001", category: "Audio", fabric: "Plastic" }
-    ]
-  },
-  { 
-    id: "#ORD-002", 
-    customer: "Priya Sharma", 
-    amount: "₹5,678", 
-    status: "Pending", 
-    date: "2024-01-14", 
-    items: 5,
-    customerEmail: "priya.sharma@example.com",
-    customerPhone: "+91 98765 43211",
-    customerAddress: "456 Park Avenue, Delhi, Delhi 110001",
-    products: [
-      { id: 2, name: "Wireless Earbuds", quantity: 2, price: "₹1,890", styleNumber: "WE-002", category: "Audio", fabric: "Plastic" },
-      { id: 3, name: "Charging Cable", quantity: 1, price: "₹456", styleNumber: "CC-003", category: "Accessories", fabric: "Silicon" }
-    ]
-  },
-  { 
-    id: "#ORD-003", 
-    customer: "Amit Patel", 
-    amount: "₹1,234", 
-    status: "Shipped", 
-    date: "2024-01-13", 
-    items: 2,
-    customerEmail: "amit.patel@example.com",
-    customerPhone: "+91 98765 43212",
-    customerAddress: "789 Business Park, Bangalore, Karnataka 560001",
-    products: [
-      { id: 4, name: "Bluetooth Speaker", quantity: 1, price: "₹1,234", styleNumber: "BS-004", category: "Audio", fabric: "Plastic" }
-    ]
-  },
-  { 
-    id: "#ORD-004", 
-    customer: "Sneha Reddy", 
-    amount: "₹8,900", 
-    status: "Processing", 
-    date: "2024-01-12", 
-    items: 7,
-    customerEmail: "sneha.reddy@example.com",
-    customerPhone: "+91 98765 43213",
-    customerAddress: "101 Tech Street, Hyderabad, Telangana 500001",
-    products: [
-      { id: 5, name: "Gaming Mouse", quantity: 1, price: "₹1,200", styleNumber: "GM-005", category: "Gaming", fabric: "Plastic" },
-      { id: 6, name: "Mechanical Keyboard", quantity: 1, price: "₹3,500", styleNumber: "MK-006", category: "Gaming", fabric: "Plastic" },
-      { id: 7, name: "RGB Headset", quantity: 1, price: "₹4,200", styleNumber: "RH-007", category: "Gaming", fabric: "Plastic" }
-    ]
-  },
-  { 
-    id: "#ORD-005", 
-    customer: "Vikram Singh", 
-    amount: "₹3,456", 
-    status: "Delivered", 
-    date: "2024-01-11", 
-    items: 4,
-    customerEmail: "vikram.singh@example.com",
-    customerPhone: "+91 98765 43214",
-    customerAddress: "202 Innovation Blvd, Pune, Maharashtra 411001",
-    products: [
-      { id: 8, name: "Smartphone Stand", quantity: 2, price: "₹356", styleNumber: "SS-008", category: "Accessories", fabric: "Metal" },
-      { id: 9, name: "Screen Protector", quantity: 2, price: "₹300", styleNumber: "SP-009", category: "Accessories", fabric: "Glass" }
-    ]
-  },
-  { 
-    id: "#ORD-006", 
-    customer: "Anita Gupta", 
-    amount: "₹1,890", 
-    status: "Cancelled", 
-    date: "2024-01-10", 
-    items: 2,
-    customerEmail: "anita.gupta@example.com",
-    customerPhone: "+91 98765 43215",
-    customerAddress: "303 Corporate Center, Chennai, Tamil Nadu 600001",
-    products: [
-      { id: 10, name: "USB Hub", quantity: 1, price: "₹890", styleNumber: "UH-010", category: "Accessories", fabric: "Plastic" },
-      { id: 11, name: "Laptop Sleeve", quantity: 1, price: "₹1,000", styleNumber: "LS-011", category: "Accessories", fabric: "Neoprene" }
-    ]
-  },
-]
+interface OrderItem {
+  product: string | { _id: string; title: string };
+  variantId: string;
+  quantity: number;
+  price: number;
+  size?: string;
+  color?: string;
+}
+
+interface Order {
+  _id: string;
+  user: { _id: string; name: string; email: string };
+  items: OrderItem[];
+  shippingAddress: {
+    fullName: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+  };
+  paymentMethod: string;
+  itemsPrice: number;
+  taxPrice: number;
+  shippingPrice: number;
+  totalPrice: number;
+  status?: string;
+  isPaid: boolean;
+  isDelivered: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(mockOrders)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [recentlyUpdatedOrder, setRecentlyUpdatedOrder] = useState<string | null>(null)
-  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await orderApi.getAll()
+        if (response.data) {
+          const ordersData = Array.isArray(response.data) ? response.data : [];
+          setOrders(ordersData as Order[])
+        } else {
+          setError(response.error || 'Failed to fetch orders')
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch orders')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [])
 
   // Function to update order status
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await orderApi.updateStatus(orderId, newStatus)
+      if (response.data) {
     setOrders(prevOrders => 
       prevOrders.map(order => 
-        order.id === orderId 
+            order._id === orderId 
           ? { ...order, status: newStatus }
           : order
       )
     )
-    // Set the recently updated order and clear it after 2 seconds
     setRecentlyUpdatedOrder(orderId)
     setTimeout(() => {
       setRecentlyUpdatedOrder(null)
     }, 2000)
+      } else {
+        alert(response.error || 'Failed to update order status')
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update order status')
+    }
   }
 
   // Function to print invoice
@@ -132,11 +103,17 @@ export default function OrdersPage() {
     
     const printWindow = window.open('', '_blank');
     if (printWindow) {
+      const orderDate = new Date(selectedOrder.createdAt).toLocaleDateString()
+      const customerName = selectedOrder.user?.name || selectedOrder.shippingAddress?.fullName || 'Customer'
+      const customerEmail = selectedOrder.user?.email || ''
+      const customerPhone = selectedOrder.shippingAddress?.phone || ''
+      const customerAddress = `${selectedOrder.shippingAddress?.address || ''}, ${selectedOrder.shippingAddress?.city || ''}, ${selectedOrder.shippingAddress?.postalCode || ''}, ${selectedOrder.shippingAddress?.country || ''}`
+      
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Invoice - ${selectedOrder.id}</title>
+          <title>Invoice - ${selectedOrder._id}</title>
           <style>
             body { 
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -238,17 +215,17 @@ export default function OrdersPage() {
               <div class="company-contact">Phone: +91 98765 43210 | Email: info@zyntherraa.com</div>
             </div>
             <div class="invoice-title">INVOICE</div>
-            <div>Order ID: ${selectedOrder.id}</div>
-            <div>Date: ${selectedOrder.date}</div>
+            <div>Order ID: ${selectedOrder._id}</div>
+            <div>Date: ${orderDate}</div>
           </div>
           
           <div class="invoice-details">
             <div class="section">
               <div class="section-title">Billing Information</div>
-              <div class="info-item"><span class="info-label">Customer:</span> ${selectedOrder.customer}</div>
-              <div class="info-item"><span class="info-label">Email:</span> ${selectedOrder.customerEmail}</div>
-              <div class="info-item"><span class="info-label">Phone:</span> ${selectedOrder.customerPhone}</div>
-              <div class="info-item"><span class="info-label">Address:</span> ${selectedOrder.customerAddress}</div>
+              <div class="info-item"><span class="info-label">Customer:</span> ${customerName}</div>
+              <div class="info-item"><span class="info-label">Email:</span> ${customerEmail}</div>
+              <div class="info-item"><span class="info-label">Phone:</span> ${customerPhone}</div>
+              <div class="info-item"><span class="info-label">Address:</span> ${customerAddress}</div>
             </div>
           </div>
           
@@ -258,27 +235,43 @@ export default function OrdersPage() {
               <thead>
                 <tr>
                   <th>Product</th>
-                  <th>Style Number</th>
-                  <th>Category</th>
+                  <th>Size</th>
+                  <th>Color</th>
                   <th class="text-right">Quantity</th>
                   <th class="text-right">Price</th>
                   <th class="text-right">Total</th>
                 </tr>
               </thead>
               <tbody>
-                ${selectedOrder.products.map((product: any) => `
-                  <tr>
-                    <td>${product.name}</td>
-                    <td>${product.styleNumber}</td>
-                    <td>${product.category}</td>
-                    <td class="text-right">${product.quantity}</td>
-                    <td class="text-right">${product.price}</td>
-                    <td class="text-right">${product.price}</td>
+                ${Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? selectedOrder.items.map((item: OrderItem) => {
+                  const productName = typeof item.product === 'object' ? item.product.title : 'Product'
+                  const itemTotal = item.price * item.quantity
+                  return `
+                    <tr>
+                      <td>${productName}</td>
+                      <td>${item.size || 'N/A'}</td>
+                      <td>${item.color || 'N/A'}</td>
+                      <td class="text-right">${item.quantity}</td>
+                      <td class="text-right">₹${item.price.toLocaleString()}</td>
+                      <td class="text-right">₹${itemTotal.toLocaleString()}</td>
+                    </tr>
+                  `
+                }).join('') : '<tr><td colspan="6" class="text-center">No items found</td></tr>'}
+                <tr>
+                  <td colspan="5" class="text-right">Subtotal:</td>
+                  <td class="text-right">₹${selectedOrder.itemsPrice.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td colspan="5" class="text-right">Tax:</td>
+                  <td class="text-right">₹${selectedOrder.taxPrice.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td colspan="5" class="text-right">Shipping:</td>
+                  <td class="text-right">₹${selectedOrder.shippingPrice.toLocaleString()}</td>
                   </tr>
-                `).join('')}
                 <tr class="total-row">
                   <td colspan="5" class="text-right">Total Amount:</td>
-                  <td class="text-right">${selectedOrder.amount}</td>
+                  <td class="text-right">₹${selectedOrder.totalPrice.toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
@@ -297,9 +290,21 @@ export default function OrdersPage() {
   };
 
   // Function to view order details
-  const viewOrderDetails = (order: any) => {
-    setSelectedOrder(order)
-    setIsModalOpen(true)
+  const viewOrderDetails = (formattedOrder: any) => {
+    // Find the original order from the orders state using the _id
+    const originalOrder = orders.find(o => o._id === formattedOrder._id)
+    if (originalOrder) {
+      setSelectedOrder(originalOrder)
+      setIsModalOpen(true)
+    } else {
+      // Fallback: if original order not found, use formatted order but ensure items is an array
+      const orderWithItems = {
+        ...formattedOrder,
+        items: Array.isArray(formattedOrder.items) ? formattedOrder.items : (formattedOrder.products || [])
+      }
+      setSelectedOrder(orderWithItems as Order)
+      setIsModalOpen(true)
+    }
   }
 
   // Function to close modal
@@ -330,73 +335,74 @@ export default function OrdersPage() {
     }
   }
 
-  const filteredOrders = orders.filter(
-    (o) => {
+  // Format order for display
+  const formatOrderForDisplay = (order: Order) => {
+    const status = order.status || (order.isDelivered ? 'Delivered' : order.isPaid ? 'Processing' : 'Pending')
+    const date = new Date(order.createdAt).toLocaleDateString()
+    const amount = `₹${order.totalPrice.toLocaleString()}`
+    const customer = order.user?.name || order.shippingAddress?.fullName || 'Unknown'
+    const items = order.items.length
+    
+    return {
+      ...order,
+      id: `#ORD-${order._id.slice(-6).toUpperCase()}`,
+      customer,
+      amount,
+      status,
+      date,
+      items,
+      customerEmail: order.user?.email || '',
+      customerPhone: order.shippingAddress?.phone || '',
+      customerAddress: `${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.postalCode || ''}, ${order.shippingAddress?.country || ''}`,
+      products: order.items.map((item: OrderItem) => ({
+        id: typeof item.product === 'object' ? item.product._id : item.product,
+        name: typeof item.product === 'object' ? item.product.title : 'Product',
+        quantity: item.quantity,
+        price: `₹${(item.price * item.quantity).toLocaleString()}`,
+        size: item.size,
+        color: item.color
+      }))
+    }
+  }
+
+  const filteredOrders = orders
+    .map(formatOrderForDisplay)
+    .filter((o: any) => {
       const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            o.customer.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === "All" || o.status === statusFilter
       return matchesSearch && matchesStatus
-    }
-  )
-
-  // Load from backend on mount and map to UI shape
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const backendOrders: BackendOrder[] = await fetchOrders()
-        const mapped = backendOrders.map((o) => {
-          const id = `#ORD-${o._id.slice(-6).toUpperCase()}`
-          const customerName = typeof o.user === 'string' ? 'Customer' : (o.user?.name || 'Customer')
-          const customerEmail = typeof o.user === 'string' ? '' : (o.user?.email || '')
-          const itemsCount = o.items?.reduce((sum, it) => sum + (it.quantity || 0), 0) || 0
-          const amount = `₹${o.totalPrice?.toLocaleString('en-IN') || '0'}`
-          const date = new Date(o.createdAt).toISOString().slice(0,10)
-          const status = o.isDelivered ? 'Delivered' : (o.isPaid ? 'Processing' : 'Pending')
-          const customerPhone = o.shippingAddress?.phone || ''
-          const customerAddress = [
-            o.shippingAddress?.address,
-            o.shippingAddress?.city,
-            o.shippingAddress?.postalCode,
-            o.shippingAddress?.country,
-          ].filter(Boolean).join(', ')
-          return {
-            id,
-            customer: customerName,
-            amount,
-            status,
-            date,
-            items: itemsCount,
-            customerEmail,
-            customerPhone,
-            customerAddress,
-            products: o.items?.map((it, idx) => ({
-              id: idx + 1,
-              name: it.variantId || 'Product',
-              quantity: it.quantity,
-              price: `₹${(it.price || 0).toLocaleString('en-IN')}`,
-              styleNumber: it.variantId,
-              category: '',
-              fabric: '',
-            })) || [],
-          }
-        })
-        setOrders(mapped)
-      } catch (e) {
-        setError('Failed to load orders from backend')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+    })
 
   // Calculate order statistics
   const orderStats = orderStatuses.reduce((acc, status) => {
-    acc[status] = orders.filter(order => order.status === status).length
+    acc[status] = orders.filter(order => {
+      const orderStatus = order.status || (order.isDelivered ? 'Delivered' : order.isPaid ? 'Processing' : 'Pending')
+      return orderStatus === status
+    }).length
     return acc
   }, {} as Record<string, number>)
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">Error: {error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -420,12 +426,6 @@ export default function OrdersPage() {
       </div>
 
       <div className="p-6 border border-input rounded-lg bg-background shadow-sm">
-        {loading && (
-          <div className="mb-4 px-3 py-2 rounded bg-blue-50 text-blue-800">Loading orders...</div>
-        )}
-        {error && (
-          <div className="mb-4 px-3 py-2 rounded bg-red-100 text-red-800">{error}</div>
-        )}
         <div className="mb-6 flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 text-muted-foreground" size={20} />
@@ -454,6 +454,11 @@ export default function OrdersPage() {
           </div>
         </div>
 
+        {filteredOrders.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No orders found</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto rounded-lg border border-input shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-muted">
@@ -468,10 +473,10 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filteredOrders.map((order) => (
+                {filteredOrders.map((order: any) => (
                 <tr 
-                  key={order.id} 
-                  className={`hover:bg-muted/50 transition-all duration-200 ${recentlyUpdatedOrder === order.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
+                    key={order._id} 
+                    className={`hover:bg-muted/50 transition-all duration-200 ${recentlyUpdatedOrder === order._id ? 'bg-green-50 border-l-4 border-l-green-500' : ''}`}
                 >
                   <td className="py-3 px-4 text-foreground font-medium">{order.id}</td>
                   <td className="py-3 px-4 text-foreground">{order.customer}</td>
@@ -481,7 +486,7 @@ export default function OrdersPage() {
                     <div className="relative inline-block">
                       <select
                         value={order.status}
-                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                          onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold border-0 appearance-none pr-6 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${getStatusColor(order.status)} transition-all duration-200 ease-in-out transform hover:scale-105 shadow-sm`}
                       >
                         {orderStatuses.map((status) => (
@@ -491,7 +496,7 @@ export default function OrdersPage() {
                         ))}
                       </select>
                       <ChevronDown className="absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none" size={12} />
-                      {recentlyUpdatedOrder === order.id && (
+                        {recentlyUpdatedOrder === order._id && (
                         <Check className="absolute -top-2 -right-2 w-5 h-5 text-green-500 bg-white rounded-full border-2 border-green-500" size={16} />
                       )}
                     </div>
@@ -511,6 +516,7 @@ export default function OrdersPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Order Details Modal */}
@@ -535,25 +541,25 @@ export default function OrdersPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Order ID:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.id}</span>
+                        <span className="font-medium text-foreground">{selectedOrder._id}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Order Date:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.date}</span>
+                        <span className="font-medium text-foreground">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Status:</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedOrder.status)}`}>
-                          {selectedOrder.status}
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(selectedOrder.status || 'Pending')}`}>
+                          {selectedOrder.status || 'Pending'}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Items:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.items}</span>
+                        <span className="font-medium text-foreground">{Array.isArray(selectedOrder.items) ? selectedOrder.items.length : 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Total Amount:</span>
-                        <span className="font-bold text-foreground">{selectedOrder.amount}</span>
+                        <span className="font-bold text-foreground">₹{selectedOrder.totalPrice.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -563,19 +569,21 @@ export default function OrdersPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Customer Name:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.customer}</span>
+                        <span className="font-medium text-foreground">{selectedOrder.user?.name || selectedOrder.shippingAddress?.fullName || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.customerEmail}</span>
+                        <span className="font-medium text-foreground">{selectedOrder.user?.email || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Phone:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.customerPhone}</span>
+                        <span className="font-medium text-foreground">{selectedOrder.shippingAddress?.phone || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Address:</span>
-                        <span className="font-medium text-foreground">{selectedOrder.customerAddress}</span>
+                        <span className="font-medium text-foreground text-right">
+                          {selectedOrder.shippingAddress?.address || ''}, {selectedOrder.shippingAddress?.city || ''}, {selectedOrder.shippingAddress?.postalCode || ''}, {selectedOrder.shippingAddress?.country || ''}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -587,33 +595,37 @@ export default function OrdersPage() {
                     <div className="bg-card border-b border-border">
                       <div className="grid grid-cols-12 gap-4 py-2 px-4 font-semibold text-foreground">
                         <div className="col-span-6">Product</div>
-                        <div className="col-span-2 text-center">Style Number</div>
+                        <div className="col-span-2 text-center">Size/Color</div>
                         <div className="col-span-1 text-center">Qty</div>
                         <div className="col-span-3 text-right">Price</div>
                       </div>
                     </div>
                     <div className="divide-y divide-border">
-                      {selectedOrder.products && selectedOrder.products.map((product: any, index: number) => (
-                        <div key={index} className="grid grid-cols-12 gap-4 py-3 px-4 bg-background hover:bg-muted/50">
-                          <div className="col-span-6 font-medium text-foreground">
-                            <div>{product.name}</div>
-                            <div className="text-sm text-muted-foreground">{product.category}</div>
-                            {product.fabric && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Fabric: {product.fabric}
-                              </div>
-                            )}
-                          </div>
-                          <div className="col-span-2 text-center text-foreground">{product.styleNumber}</div>
-                          <div className="col-span-1 text-center text-foreground">{product.quantity}</div>
-                          <div className="col-span-3 text-right text-foreground">{product.price}</div>
+                      {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                        selectedOrder.items.map((item: OrderItem, index: number) => {
+                          const productName = typeof item.product === 'object' ? item.product.title : 'Product'
+                          const itemTotal = item.price * item.quantity
+                          return (
+                          <div key={index} className="grid grid-cols-12 gap-4 py-3 px-4 bg-background hover:bg-muted/50">
+                            <div className="col-span-6 font-medium text-foreground">
+                                <div>{productName}</div>
+                                </div>
+                              <div className="col-span-2 text-center text-foreground">{item.size || 'N/A'} / {item.color || 'N/A'}</div>
+                              <div className="col-span-1 text-center text-foreground">{item.quantity}</div>
+                              <div className="col-span-3 text-right text-foreground">₹{itemTotal.toLocaleString()}</div>
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="py-4 px-4 text-center text-muted-foreground">
+                          No items found in this order
                         </div>
-                      ))}
+                      )}
                     </div>
                     <div className="bg-card border-t border-border py-3 px-4">
                       <div className="flex justify-between font-bold text-foreground">
                         <span>Total:</span>
-                        <span>{selectedOrder.amount}</span>
+                        <span>₹{selectedOrder.totalPrice.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

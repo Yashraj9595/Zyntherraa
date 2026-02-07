@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,14 +41,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('token', token);
       
       // Get user profile
-      const response = await userApi.getProfile() as any;
+      const response = await userApi.getProfile();
       
-      if (response) {
+      if (response.data) {
         setUser({
-          _id: response._id,
-          name: response.name,
-          email: response.email,
-          role: response.role,
+          _id: (response.data as any)._id,
+          name: (response.data as any).name,
+          email: (response.data as any).email,
+          role: (response.data as any).role,
           token
         });
       } else {
@@ -85,7 +86,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     isAuthenticated,
-    isAdmin
+    isAdmin,
+    loading
   };
 
   if (loading) {

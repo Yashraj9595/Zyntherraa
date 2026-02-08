@@ -8,6 +8,7 @@ import { validate, validateParams, validateQuery } from '../middleware/validatio
 import { productSchemas, paramSchemas, querySchemas } from '../utils/validationSchemas';
 import { sanitizeObject } from '../utils/sanitize';
 import logger, { logRequest } from '../utils/logger';
+import { invalidateCache } from '../utils/cache';
 
 // GET /api/products - Get all products with optional filtering and advanced features
 router.get('/', async (req: any, res) => {

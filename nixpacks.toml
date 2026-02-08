@@ -1,0 +1,4 @@
+# Use Node 22 for Coolify/Nixpacks (react-router-dom@7 requires Node >= 20)
+# Overrides default Node 18 to avoid EBADENGINE and build failures.
+[variables]
+NIXPACKS_NODE_VERSION = "22"

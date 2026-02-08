@@ -6,7 +6,6 @@ import { Button } from "../../components/ui/button"
 import { Plus, Edit2, Trash2, X, Upload, Loader2, ArrowUp, ArrowDown, Eye, EyeOff, Search, GripVertical, BarChart3, ExternalLink } from "lucide-react"
 import { homepageApi, productApi, uploadApi, categoryApi } from "../../utils/api"
 import { getImageUrl } from "../../utils/imageUtils"
-import { useNavigate } from "react-router-dom"
 
 interface Banner {
   _id: string
@@ -226,7 +225,6 @@ const SectionTitleEditor: React.FC<SectionTitleEditorProps & {
 const generateTempId = () => `section-item-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
 
 export default function HomePageManagement() {
-  const navigate = useNavigate()
   const [banners, setBanners] = useState<Banner[]>([])
   const [featured, setFeatured] = useState<FeaturedProduct[]>([])
   const [watchAndShop, setWatchAndShop] = useState<WatchAndShop[]>([])
@@ -282,8 +280,6 @@ export default function HomePageManagement() {
     order: 0,
     isActive: true
   })
-  const [loadingProducts, setLoadingProducts] = useState(false)
-  
   // Watch & Shop modal state
   const [showWatchAndShopModal, setShowWatchAndShopModal] = useState(false)
   const [editingWatchAndShop, setEditingWatchAndShop] = useState<WatchAndShop | null>(null)

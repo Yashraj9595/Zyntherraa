@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Heart, Loader2 } from "lucide-react";
 import { productApi } from "../../utils/api";
@@ -252,7 +252,7 @@ const ProductDetails: React.FC = () => {
   }, [product]);
 
   const { addToCart } = useCart();
-  const { addToWishlist, isInWishlist, removeFromWishlist } = useWishlist();
+  const { addToWishlist, isInWishlist } = useWishlist();
   const { user } = useAuth();
   const [wishlistMessage, setWishlistMessage] = useState<string | null>(null);
 

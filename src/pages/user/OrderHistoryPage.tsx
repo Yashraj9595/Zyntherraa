@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Calendar, MapPin, CreditCard, RefreshCw, Eye } from 'lucide-react';
-import { orderApi, userApi } from '../../utils/api';
+import { Package, RefreshCw, Eye } from 'lucide-react';
+import { userApi } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { getImageUrl } from '../../utils/imageUtils';
@@ -54,13 +54,7 @@ const OrderHistoryPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [reordering, setReordering] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-    }
-  }, [user, currentPage]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -76,7 +70,13 @@ const OrderHistoryPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user, fetchOrders]);
 
   const handleReorder = async (orderId: string) => {
     try {

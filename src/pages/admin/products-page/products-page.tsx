@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Search, Eye, Edit, Plus, Image, Video, Loader2, AlertCircle, Trash2 } from "lucide-react"
+import { Search, Edit, Plus, Image, Video, Loader2, AlertCircle, Trash2 } from "lucide-react"
 import { ProductForm } from "../../../components/admin/ProductForm"
 import { productApi } from "../../../utils/api"
 

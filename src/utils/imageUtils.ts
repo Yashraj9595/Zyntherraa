@@ -1,5 +1,4 @@
 // Utility functions for handling image URLs
-import API_CONFIG from '../config/api';
 
 /**
  * Get the backend base URL (without /api)

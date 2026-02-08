@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { userApi } from '../../utils/api';
-import { useAuth } from '../../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const RegisterPage: React.FC = () => {
@@ -14,7 +13,6 @@ const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

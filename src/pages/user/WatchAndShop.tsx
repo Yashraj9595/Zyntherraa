@@ -290,7 +290,7 @@ const WatchAndShop: React.FC = () => {
     const isFullUrl = url.startsWith('http://') || url.startsWith('https://');
     
     // YouTube
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeRegex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
     const youtubeMatch = url.match(youtubeRegex);
     if (youtubeMatch) {
       const autoplayParam = autoplay ? '&autoplay=1' : '';
@@ -374,7 +374,6 @@ const WatchAndShop: React.FC = () => {
                 (product?.variants?.[0]?.images?.[0]) || 
                 ''
               );
-              const productPrice = item.productPrice || product?.variants?.[0]?.price || 0;
               const videoEmbedUrl = item.videoUrl ? getVideoEmbedUrl(item.videoUrl, false, false) : null;
               const displayImage = getImageUrl(item.imageUrl || productImage);
 
@@ -467,7 +466,6 @@ const WatchAndShop: React.FC = () => {
                   (product?.variants?.[0]?.images?.[0]) || 
                   ''
                 );
-                const productPrice = item.productPrice || product?.variants?.[0]?.price || 0;
                 const videoEmbedUrl = item.videoUrl ? getVideoEmbedUrl(item.videoUrl, false, false) : null;
                 const displayImage = getImageUrl(item.imageUrl || productImage);
 

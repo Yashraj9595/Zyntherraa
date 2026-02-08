@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Search, ShoppingCart, Heart, User, Menu, X, ChevronDown, Settings, LogOut } from "lucide-react";
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
 const Header: React.FC = () => {
-  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { isAuthenticated, logout, user, isAdmin } = useAuth();
+  const { isAuthenticated, logout, isAdmin } = useAuth();
   const { getCartItemCount } = useCart();
   const cartCount = getCartItemCount();
   const userMenuRef = useRef<HTMLDivElement>(null);

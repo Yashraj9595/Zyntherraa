@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { userApi } from '../../utils/api';
-import { Loader2, Mail, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 
 const VerifyResetOTPPage: React.FC = () => {
   const location = useLocation();

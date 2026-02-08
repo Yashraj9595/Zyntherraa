@@ -7,7 +7,7 @@ import { validate, validateParams, validateQuery } from '../middleware/validatio
 import { productSchemas, paramSchemas, querySchemas } from '../utils/validationSchemas';
 import { sanitizeObject } from '../utils/sanitize';
 import logger, { logRequest } from '../utils/logger';
-import { invalidateCache } from '../utils/cache';
+import { invalidateCache } from '../utils/cache'; // required for cache invalidation on product updates
 
 const router: Router = express.Router();
 

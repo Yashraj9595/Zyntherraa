@@ -133,14 +133,18 @@ const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50MB
 app.use(validateRequestSize(MAX_REQUEST_SIZE));
 
 // Configure CORS
+const isProduction = process.env.NODE_ENV === 'production';
+const defaultProductionOrigins = ['https://zyntherraa.com', 'https://www.zyntherraa.com'];
 const corsOrigins = process.env.CORS_ORIGIN;
 const allowedOrigins = corsOrigins
   ? corsOrigins.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : [];
+  : isProduction
+    ? defaultProductionOrigins
+    : [];
 
 const corsOptions: CorsOptions = allowedOrigins.length
   ? {
-      origin: (origin, callback) => {
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         if (!origin) {
           return callback(null, true);
         }
@@ -155,6 +159,8 @@ const corsOptions: CorsOptions = allowedOrigins.length
       },
       credentials: true,
       optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     }
   : {
       origin: true,

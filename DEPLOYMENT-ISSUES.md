@@ -89,6 +89,27 @@ Production was running **`npm start`** (dev server), which injects the webpack-d
 
 ---
 
+## 8. CORS: “No 'Access-Control-Allow-Origin' header” and 502
+
+**Problem:**
+- Browser blocks requests from `https://zyntherraa.com` to `https://myserver.zyntherraa.com/api/...` with:  
+  *Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.*
+- Some requests return **502 Service Unavailable**; frontend then shows “Unexpected end of JSON input” when parsing the error response.
+
+**Causes:**
+- **CORS:** Backend must allow the frontend origin. If `CORS_ORIGIN` was set in Coolify to something that doesn’t include `https://zyntherraa.com`, the backend rejects the origin. Also, when the backend returns 502 (e.g. app not running), the response has no CORS headers, so the browser reports CORS instead of 502.
+- **502:** Backend container not running (e.g. build failed, crash on startup like MongoDB auth), or proxy misconfiguration.
+
+**Fixes (in repo):**
+- `backend/src/server.ts`: In **production**, if `CORS_ORIGIN` is empty, the backend now **defaults** to allowing `https://zyntherraa.com` and `https://www.zyntherraa.com`. Explicit `methods` and `allowedHeaders` are set so preflight (OPTIONS) requests succeed.
+- So after redeploy, CORS works for the live site even if you don’t set `CORS_ORIGIN` in Coolify.
+
+**Coolify (optional):**
+- Backend env: Set `CORS_ORIGIN=https://zyntherraa.com,https://www.zyntherraa.com` if you want to override or make it explicit. Set `NODE_ENV=production` so the production CORS default applies.
+- If you still see 502: check backend **logs** in Coolify (container crashing? MongoDB connection?). Ensure the `invalidateCache` fix is pushed and backend build succeeds; clear build cache and redeploy if needed.
+
+---
+
 ## Checklist before / after deploy
 
 | Item | Where | Action |
@@ -99,6 +120,7 @@ Production was running **`npm start`** (dev server), which injects the webpack-d
 | invalidateCache import | Repo | Import in `backend/src/routes/products.ts`; commit & push |
 | MongoDB URI | Coolify backend env | Correct user, password, `/zyntherraa`, `authSource=admin`, URL-encode password |
 | MongoDB retry / no exit(1) | Repo | `backend/src/config/db.ts` retry logic; commit & push |
+| CORS for zyntherraa.com | Repo | `backend/src/server.ts` production default origins; set `NODE_ENV=production` in Coolify |
 | Which container to use | Coolify UI | Use app container for Node/npm, not the DB container |
 | Secrets | Coolify / ops | Rotate if exposed; set only in Coolify env |
 
@@ -110,4 +132,4 @@ Production was running **`npm start`** (dev server), which injects the webpack-d
   - **Frontend:** Build from repo root (no base directory). Uses root `package.json`, root `nixpacks.toml`. Build = `npm run build`, start = `npm run start:prod` (serves `build/` with `serve`).  
   - **Backend:** Build from repo with **Base Directory** = `backend`. Uses `backend/package.json`, `backend/nixpacks.toml`. Build = `npm ci` + `npm run build`, start = `npm run start:prod` (= `node dist/server.js`).
 - **One MongoDB** service; backend connects via `MONGO_URI` or `MONGODB_URI` in its environment variables.
-- **Backend env in Coolify:** Set `MONGO_URI` (e.g. `mongodb://user:pass@host:27017/zyntherraa?directConnection=true&authSource=admin`), `CORS_ORIGIN`, `JWT_SECRET`, `NODE_ENV=production`, etc. Never commit real secrets to Git.
+- **Backend env in Coolify:** Set `MONGO_URI` (e.g. `mongodb://user:pass@host:27017/zyntherraa?directConnection=true&authSource=admin`), `JWT_SECRET`, `NODE_ENV=production`. Optionally `CORS_ORIGIN=https://zyntherraa.com,https://www.zyntherraa.com` (backend now defaults to these in production if unset). Never commit real secrets to Git.

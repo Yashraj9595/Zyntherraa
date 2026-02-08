@@ -1,5 +1,4 @@
 import express, { Router } from 'express';
-const router: Router = express.Router();
 import Product, { IProduct } from '../models/Product';
 import SearchHistory from '../models/SearchHistory';
 import SearchAnalytics from '../models/SearchAnalytics';
@@ -9,6 +8,8 @@ import { productSchemas, paramSchemas, querySchemas } from '../utils/validationS
 import { sanitizeObject } from '../utils/sanitize';
 import logger, { logRequest } from '../utils/logger';
 import { invalidateCache } from '../utils/cache';
+
+const router: Router = express.Router();
 
 // GET /api/products - Get all products with optional filtering and advanced features
 router.get('/', async (req: any, res) => {

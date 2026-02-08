@@ -1,0 +1,6 @@
+# Backend app: use Node 22 and start with start:prod (same as npm start)
+[variables]
+NIXPACKS_NODE_VERSION = "22"
+
+[start]
+cmd = "npm run start:prod"

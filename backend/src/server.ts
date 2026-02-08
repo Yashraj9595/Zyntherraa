@@ -60,7 +60,34 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ============================================
-// REQUEST ID MIDDLEWARE (must be first)
+// CORS (first so preflight OPTIONS always gets headers)
+// ============================================
+const defaultProductionOrigins = ['https://zyntherraa.com', 'https://www.zyntherraa.com'];
+const corsOrigins = process.env.CORS_ORIGIN;
+const allowedOrigins = corsOrigins
+  ? corsOrigins.split(',').map((o) => o.trim()).filter(Boolean)
+  : defaultProductionOrigins;
+
+const corsOptions: CorsOptions = allowedOrigins.length
+  ? {
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        console.warn(`[SECURITY] CORS violation: Origin ${origin} not allowed`);
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      },
+      credentials: true,
+      optionsSuccessStatus: 200,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    }
+  : { origin: true, credentials: true, optionsSuccessStatus: 200 };
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// ============================================
+// REQUEST ID MIDDLEWARE
 // ============================================
 app.use(requestIdMiddleware);
 
@@ -141,45 +168,6 @@ app.use(mongoSanitize());
 // Request size limits
 const MAX_REQUEST_SIZE = 50 * 1024 * 1024; // 50MB
 app.use(validateRequestSize(MAX_REQUEST_SIZE));
-
-// Configure CORS
-const isProduction = process.env.NODE_ENV === 'production';
-const defaultProductionOrigins = ['https://zyntherraa.com', 'https://www.zyntherraa.com'];
-const corsOrigins = process.env.CORS_ORIGIN;
-const allowedOrigins = corsOrigins
-  ? corsOrigins.split(',').map((origin) => origin.trim()).filter(Boolean)
-  : isProduction
-    ? defaultProductionOrigins
-    : [];
-
-const corsOptions: CorsOptions = allowedOrigins.length
-  ? {
-      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-        if (!origin) {
-          return callback(null, true);
-        }
-
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        }
-
-        // Log security event
-        console.warn(`[SECURITY] CORS violation: Origin ${origin} not allowed`);
-        return callback(new Error(`Origin ${origin} not allowed by CORS`));
-      },
-      credentials: true,
-      optionsSuccessStatus: 200,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    }
-  : {
-      origin: true,
-      credentials: true,
-      optionsSuccessStatus: 200,
-    };
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Webhook endpoint needs raw body for signature verification
 // Must be registered before JSON middleware

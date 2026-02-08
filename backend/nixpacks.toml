@@ -1,6 +1,6 @@
-# Backend app: use Node 22 and start with start:prod (same as npm start)
+# Backend app: use Node 22; run node directly to avoid npm restart noise and deprecation warnings
 [variables]
 NIXPACKS_NODE_VERSION = "22"
 
 [start]
-cmd = "npm run start:prod"
+cmd = "node dist/server.js"

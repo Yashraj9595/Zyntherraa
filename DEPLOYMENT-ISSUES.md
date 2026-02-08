@@ -110,13 +110,31 @@ Production was running **`npm start`** (dev server), which injects the webpack-d
 
 ---
 
+## 9. Backend restart loop and log noise (Coolify)
+
+**Problem:**
+- Logs show `npm run start:prod` / `node dist/server.js` repeating many times (container restart loop).
+- Lots of `npm warn config production Use --omit=dev instead` and `(node:xx) [DEP0040] DeprecationWarning: The punycode module is deprecated`.
+- No "Server is running" or "MongoDB Connected" in logs, so the process exits before listening.
+
+**Fixes (in repo):**
+- **`backend/nixpacks.toml`:** Start command changed from `npm run start:prod` to **`node dist/server.js`** so the main process is Node, not npm. This removes npm-related warnings and makes restarts easier to debug.
+- **`backend/src/server.ts`:** Added **uncaughtException** and **unhandledRejection** handlers so Coolify logs show `[FATAL] Uncaught exception:` or `[FATAL] Unhandled rejection at:` and the real error before the process exits.
+
+**What to do:**
+1. Redeploy the backend (so the new start command and crash handlers are used).
+2. If it still restarts, check the **last lines** of the backend log in Coolify for `[FATAL] Uncaught exception:` or `[FATAL] Unhandled rejection at:` — that will show the real cause (e.g. missing env, MongoDB/Redis error, or a thrown exception in code).
+3. **Punycode warning:** Comes from a dependency (e.g. nodemailer). To hide it in production you can set in Coolify backend env: `NODE_OPTIONS=--no-deprecation` (optional).
+
+---
+
 ## Checklist before / after deploy
 
 | Item | Where | Action |
 |------|--------|--------|
 | Node 20+ for frontend | Repo + optional Coolify env | Root `nixpacks.toml`, root `package.json` engines, `.nvmrc`; or `NIXPACKS_NODE_VERSION=22` |
 | Serve frontend build, not dev server | Repo | `start:prod` + `serve` in root `package.json`, `[start]` in root `nixpacks.toml` |
-| Backend start command + Node 22 | Repo | `start:prod` in `backend/package.json`; `backend/nixpacks.toml` for Base Directory = backend |
+| Backend start command + Node 22 | Repo | `backend/nixpacks.toml` uses `node dist/server.js`; Base Directory = backend |
 | invalidateCache import | Repo | Import in `backend/src/routes/products.ts`; commit & push |
 | MongoDB URI | Coolify backend env | Correct user, password, `/zyntherraa`, `authSource=admin`, URL-encode password |
 | MongoDB retry / no exit(1) | Repo | `backend/src/config/db.ts` retry logic; commit & push |
@@ -130,6 +148,6 @@ Production was running **`npm start`** (dev server), which injects the webpack-d
 
 - **Two applications in Coolify:**  
   - **Frontend:** Build from repo root (no base directory). Uses root `package.json`, root `nixpacks.toml`. Build = `npm run build`, start = `npm run start:prod` (serves `build/` with `serve`).  
-  - **Backend:** Build from repo with **Base Directory** = `backend`. Uses `backend/package.json`, `backend/nixpacks.toml`. Build = `npm ci` + `npm run build`, start = `npm run start:prod` (= `node dist/server.js`).
+  - **Backend:** Build from repo with **Base Directory** = `backend`. Uses `backend/package.json`, `backend/nixpacks.toml`. Build = `npm ci` + `npm run build`, start = **`node dist/server.js`** (set in `backend/nixpacks.toml`; avoids npm and reduces log noise).
 - **One MongoDB** service; backend connects via `MONGO_URI` or `MONGODB_URI` in its environment variables.
 - **Backend env in Coolify:** Set `MONGO_URI` (e.g. `mongodb://user:pass@host:27017/zyntherraa?directConnection=true&authSource=admin`), `JWT_SECRET`, `NODE_ENV=production`. Optionally `CORS_ORIGIN=https://zyntherraa.com,https://www.zyntherraa.com` (backend now defaults to these in production if unset). Never commit real secrets to Git.

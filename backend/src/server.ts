@@ -24,6 +24,16 @@ import { initRedis } from './utils/cache';
 // Load environment variables
 dotenv.config();
 
+// Log startup crashes so Coolify/docker logs show why the process exited
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Initialize Sentry error tracking (must be done before other imports)
 initializeSentry();
 

@@ -2,3 +2,8 @@
 # Overrides default Node 18 to avoid EBADENGINE and build failures.
 [variables]
 NIXPACKS_NODE_VERSION = "22"
+
+# Serve the production build (static files). Do NOT use "npm start" in production
+# or the dev server will run and inject WebSocket client, causing HTTPS errors.
+[start]
+cmd = "npm run start:prod"
